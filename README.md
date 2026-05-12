@@ -50,7 +50,7 @@ On Mac and Linux, Python 3.11 is recommended but InsightFace installs cleanly on
 ### Clone the repo
 
 ```bash
-git clone https://github.com/f0rtron/Eikon.git
+git clone https://github.com/YOUR_USERNAME/eikon.git
 cd eikon
 ```
 
@@ -126,6 +126,12 @@ NumPy must be 1.26.4, OpenCV 4.8.1, InsightFace 0.7.3. If any of these differ, t
 
 ## Configuration
 
+Copy the example env file and fill in your values:
+
+```bash
+cp .env.example .env
+```
+
 Open .env in any text editor. The fields you must fill in are marked with a comment.
 
 ```env
@@ -134,6 +140,9 @@ DB_PASSWORD=your_password_here
 
 # REQUIRED — any random 32+ character string
 SECRET_KEY=pick-any-long-random-string-here
+
+# REQUIRED — get a free key at console.groq.com
+GROQ_API_KEY=gsk_your_key_here
 
 # Leave everything else at default for now
 ```
@@ -188,6 +197,13 @@ UPDATE users SET password_hash='paste_hash_here' WHERE username='admin';
 EXIT;
 ```
 
+### Verify everything
+
+```bash
+python test_day2.py
+```
+
+All five checks should pass. If the database check fails, the password or service is the issue. If the camera check fails, something else has the webcam open.
 
 
 ## Running Eikon
@@ -394,8 +410,6 @@ Close any other application using the webcam. If you have multiple cameras, try 
 **Everyone recognised as Unknown**
 Run `python core/train.py` after registering students. If already done, try lowering RECOGNITION_THRESHOLD to 0.45 in .env and registering in the same lighting conditions as the classroom.
 
-**AI chat returns no response**
-Check that GROQ_API_KEY is set correctly in .env and that GROQ_MODEL is set to `llama-3.3-70b-versatile`.
 
 **Flutter cannot connect to server**
 Confirm the baseUrl in constants.dart matches your laptop's IP (use ipconfig to check). Flask must show "Running on 0.0.0.0" in its startup log, not just 127.0.0.1. Both devices must be on the same WiFi.
@@ -412,6 +426,32 @@ Username: `admin`
 Password: `Admin@1234` (or whatever you set during database setup)
 
 Change this before showing the system to anyone outside the team.
+
+
+## UN Sustainable Development Goals
+
+Eikon was built as a university project, but its impact maps directly onto five of the seventeen UN Sustainable Development Goals. This is not a stretch — the alignment is structural.
+
+**SDG 4 - Quality Education**
+
+This is the primary one. Every minute a teacher spends calling names is a minute not spent teaching. Eikon eliminates that entirely. More meaningfully, the data it produces enables early intervention. When a student's attendance drops below 75%, the system flags them automatically. A teacher who knows a student is disengaging in week three can act. One who only finds out at the end of semester cannot. Accurate, effortless attendance data is a prerequisite for responsive education.
+
+**SDG 9 - Industry, Innovation and Infrastructure**
+
+ArcFace, the model Eikon runs on, was a research paper in 2018. Eikon takes that research and turns it into something a school administrator can use without reading a single technical document. That gap between research and deployment is exactly what SDG 9 means by building innovation infrastructure. Eikon is also designed for low-resource environments — it runs on a laptop and a webcam, with no internet required and no per-user licensing cost.
+
+**SDG 10 - Reduced Inequalities**
+
+Manual attendance is inconsistent by nature. Some teachers mark strictly, others leniently, some forget entirely. Students who speak up get corrected. Students who do not, do not. Eikon treats every student identically. The same threshold, the same timestamp, the same proof. Institutional fairness should not depend on which teacher happens to be teaching that day.
+
+**SDG 16 - Peace, Justice and Strong Institutions**
+
+Every attendance record Eikon creates is timestamped, photographed, and stored with a confidence score. There is no ambiguity and no room for dispute. A student cannot claim they were marked absent unfairly. A teacher cannot accidentally mark the wrong name. The photo crop taken at the moment of recognition is forensic-grade proof. Transparent, auditable records are the foundation of trustworthy institutions.
+
+**SDG 17 - Partnerships for the Goals**
+
+Eikon's architecture is designed for adoption, not just deployment. The local network model means it works in areas with unreliable internet. The open API means other systems can integrate with it. The multi-interface design — kiosk, web, mobile — means institutions with different resources can all use it. A government school with one shared computer uses the kiosk. A university with a tablet per teacher uses the Flutter app. The system meets institutions where they are.
+
 
 
 *Eikon — Built as a Final Year Project. University of Central Punjab.*
