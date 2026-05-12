@@ -50,7 +50,7 @@ On Mac and Linux, Python 3.11 is recommended but InsightFace installs cleanly on
 ### Clone the repo
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/eikon.git
+git clone https://github.com/f0rtron/Eikon.git
 cd eikon
 ```
 
@@ -126,12 +126,6 @@ NumPy must be 1.26.4, OpenCV 4.8.1, InsightFace 0.7.3. If any of these differ, t
 
 ## Configuration
 
-Copy the example env file and fill in your values:
-
-```bash
-cp .env.example .env
-```
-
 Open .env in any text editor. The fields you must fill in are marked with a comment.
 
 ```env
@@ -140,9 +134,6 @@ DB_PASSWORD=your_password_here
 
 # REQUIRED — any random 32+ character string
 SECRET_KEY=pick-any-long-random-string-here
-
-# REQUIRED — get a free key at console.groq.com
-GROQ_API_KEY=gsk_your_key_here
 
 # Leave everything else at default for now
 ```
@@ -197,13 +188,6 @@ UPDATE users SET password_hash='paste_hash_here' WHERE username='admin';
 EXIT;
 ```
 
-### Verify everything
-
-```bash
-python test_day2.py
-```
-
-All five checks should pass. If the database check fails, the password or service is the issue. If the camera check fails, something else has the webcam open.
 
 
 ## Running Eikon
@@ -411,7 +395,7 @@ Close any other application using the webcam. If you have multiple cameras, try 
 Run `python core/train.py` after registering students. If already done, try lowering RECOGNITION_THRESHOLD to 0.45 in .env and registering in the same lighting conditions as the classroom.
 
 **AI chat returns no response**
-Check that GROQ_API_KEY is set correctly in .env and that GROQ_MODEL is set to `llama-3.3-70b-versatile`. Test your key directly at console.groq.com.
+Check that GROQ_API_KEY is set correctly in .env and that GROQ_MODEL is set to `llama-3.3-70b-versatile`.
 
 **Flutter cannot connect to server**
 Confirm the baseUrl in constants.dart matches your laptop's IP (use ipconfig to check). Flask must show "Running on 0.0.0.0" in its startup log, not just 127.0.0.1. Both devices must be on the same WiFi.
