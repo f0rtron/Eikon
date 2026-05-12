@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Bulk Import — Smart Attendance{% endblock %}
+
+{% block content %}
+<div class="p-6 max-w-lg">
+  <div class="flex items-center gap-3 mb-6">
+    <a href="{{ url_for('students.index') }}"
+       class="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+      <svg class="w-5 h-5 text-slate-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+    </a>
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800 dark:text-white">Bulk Import Students</h1>
+      <p class="text-slate-500 text-sm mt-0.5">Upload a CSV file to add multiple students at once</p>
+    </div>
+  </div>
+
+  <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 space-y-5">
+
+    <!-- Template download -->
+    <div class="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+      <div>
+        <div class="text-sm font-medium text-blue-700 dark:text-blue-400">Download CSV Template</div>
+        <div class="text-xs text-blue-500 mt-0.5">reg_number, name, email, class_name</div>
+      </div>
+      <a href="{{ url_for('students.import_template') }}"
+         class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-500 transition-colors">
+        Download
+      </a>
+    </div>
+
+    <!-- Upload form -->
+    <form method="POST" action="{{ url_for('students.bulk_import') }}"
+          enctype="multipart/form-data" class="space-y-4">
+
+      <div>
+        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+          CSV File
+        </label>
+        <div class="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-8 text-center
+                    hover:border-blue-400 transition-colors cursor-pointer"
+             onclick="document.getElementById('csv_file').click()">
+          <svg class="w-10 h-10 text-slate-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+          </svg>
+          <p class="text-sm text-slate-500">Click to upload or drag and drop</p>
+          <p class="text-xs text-slate-400 mt-1">.csv files only</p>
+          <p id="file-name" class="text-xs text-blue-600 mt-2 font-medium"></p>
+          <input type="file" name="csv_file" id="csv_file" accept=".csv" class="hidden"
+                 onchange="document.getElementById('file-name').textContent = this.files[0]?.name || ''"/>
+        </div>
+      </div>
+
+      <!-- CSV format info -->
+      <div class="bg-slate-50 dark:bg-slate-700 rounded-lg p-4">
+        <div class="text-xs font-medium text-slate-600 dark:text-slate-300 mb-2">Required CSV format:</div>
+        <code class="text-xs text-slate-500 dark:text-slate-400">
+          reg_number,name,email,class_name<br>
+          L1F22BSCS001,Fahad Gujjar,fahad@ucp.edu.pk,BSCS-6A<br>
+          L1F22BSCS002,Ali Hassan,,BSCS-6A
+        </code>
+        <div class="text-xs text-slate-400 mt-2">
+          • <strong>reg_number</strong> and <strong>name</strong> are required<br>
+          • email and class_name are optional<br>
+          • Existing students (same reg_number) are skipped
+        </div>
+      </div>
+
+      <div class="flex gap-3">
+        <button type="submit"
+          class="flex-1 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-500 transition-colors text-sm">
+          Import Students
+        </button>
+        <a href="{{ url_for('students.index') }}"
+           class="px-5 py-2.5 border border-slate-300 text-slate-600 font-medium rounded-lg hover:bg-slate-50 transition-colors text-sm">
+          Cancel
+        </a>
+      </div>
+    </form>
+
+  </div>
+</div>
+{% endblock %}

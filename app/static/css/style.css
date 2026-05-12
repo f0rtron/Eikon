@@ -1,0 +1,187 @@
+/* Smart Attendance — Cyprus + Sand Theme */
+
+/* ── CSS Variables ────────────────────────────────────────────────────────── */
+:root {
+  --cyprus:        #004643;
+  --cyprus-light:  #006B66;
+  --cyprus-dark:   #002E2C;
+  --sand:          #F0EDE5;
+  --sand-dark:     #E8E4DB;
+  --sand-darker:   #D4CFC6;
+
+  /* Semantic */
+  --color-primary:    var(--cyprus);
+  --color-primary-hover: var(--cyprus-light);
+
+  /* Light mode surfaces */
+  --bg:            var(--sand);
+  --surface:       #FFFFFF;
+  --card:          #FDFCF9;
+  --border:        #E8E4DB;
+  --border-light:  #F0EDE5;
+
+  /* Text */
+  --text-primary:   #1A1A1A;
+  --text-secondary: #555550;
+  --text-muted:     #888883;
+
+  /* Status */
+  --success: #16A34A;
+  --warning: #D97706;
+  --danger:  #DC2626;
+  --info:    #0891B2;
+}
+
+/* ── Dark mode ────────────────────────────────────────────────────────────── */
+html.dark {
+  --bg:      #001A19;
+  --surface: #002E2C;
+  --card:    #004643;
+  --border:  #1A3836;
+  --border-light: #1A3836;
+
+  --text-primary:   #F0EDE5;
+  --text-secondary: #C4C0B8;
+  --text-muted:     #7A8A89;
+}
+
+/* ── Base ─────────────────────────────────────────────────────────────────── */
+body {
+  background-color: var(--bg);
+  color: var(--text-primary);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+/* ── Sidebar ──────────────────────────────────────────────────────────────── */
+.sidebar {
+  background-color: var(--cyprus);
+}
+
+.sidebar-link {
+  color: rgba(240, 237, 229, 0.7);
+}
+
+.sidebar-link:hover {
+  background-color: rgba(255,255,255,0.1);
+  color: var(--sand);
+}
+
+.sidebar-link.active {
+  background-color: rgba(240, 237, 229, 0.15);
+  color: var(--sand);
+  border-left: 3px solid var(--sand);
+}
+
+.sidebar-logo-text {
+  color: var(--sand);
+}
+
+.sidebar-logo-sub {
+  color: rgba(240, 237, 229, 0.5);
+}
+
+/* ── Cards ────────────────────────────────────────────────────────────────── */
+.card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────────── */
+.btn-primary {
+  background-color: var(--cyprus);
+  color: var(--sand);
+  border: none;
+}
+
+.btn-primary:hover {
+  background-color: var(--cyprus-light);
+  color: var(--sand);
+}
+
+/* ── Tables ───────────────────────────────────────────────────────────────── */
+.table-header {
+  background-color: var(--sand);
+  color: var(--text-secondary);
+}
+
+html.dark .table-header {
+  background-color: var(--card);
+  color: var(--text-secondary);
+}
+
+/* ── Status badges ────────────────────────────────────────────────────────── */
+.badge-present {
+  background-color: #DCFCE7;
+  color: #15803D;
+}
+
+.badge-late {
+  background-color: #FEF3C7;
+  color: #B45309;
+}
+
+.badge-manual {
+  background-color: #DBEAFE;
+  color: #1D4ED8;
+}
+
+html.dark .badge-present {
+  background-color: rgba(22, 163, 74, 0.2);
+  color: #4ADE80;
+}
+
+html.dark .badge-late {
+  background-color: rgba(217, 119, 6, 0.2);
+  color: #FCD34D;
+}
+
+/* ── AI Chat widget ───────────────────────────────────────────────────────── */
+.ai-fab {
+  background-color: var(--cyprus);
+  color: var(--sand);
+}
+
+.ai-fab:hover {
+  background-color: var(--cyprus-light);
+}
+
+.ai-panel-header {
+  background-color: var(--cyprus);
+}
+
+/* ── Progress bars ────────────────────────────────────────────────────────── */
+.progress-bar-fill {
+  background-color: var(--cyprus);
+}
+
+/* ── Inputs ───────────────────────────────────────────────────────────────── */
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--cyprus);
+  box-shadow: 0 0 0 3px rgba(0, 70, 67, 0.12);
+}
+
+html.dark input, html.dark select, html.dark textarea {
+  background-color: var(--card);
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+
+/* ── Scrollbar ────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--sand-darker);
+  border-radius: 3px;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: var(--card);
+}
+
+/* ── Confidence graph threshold line label ────────────────────────────────── */
+.threshold-label {
+  color: var(--warning);
+  font-size: 11px;
+}

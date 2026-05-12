@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Smart Attendance{% endblock %}
+
+{% block content %}
+<div class="p-6 space-y-6">
+
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800 dark:text-white">Dashboard</h1>
+      <p class="text-slate-500 dark:text-slate-400 text-sm mt-0.5">{{ today }}</p>
+    </div>
+    <a href="{{ url_for('students.add') }}"
+       class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors text-sm font-medium">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+      </svg>
+      Add Student
+    </a>
+  </div>
+
+  <!-- Stats cards — now 5 including Late -->
+  <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+
+    <div class="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
+      <div class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Total Students</div>
+      <div class="text-3xl font-bold text-slate-800 dark:text-white">{{ total_students }}</div>
+    </div>
+
+    <div class="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
+      <div class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Present</div>
+      <div class="text-3xl font-bold text-green-600">{{ present_today }}</div>
+    </div>
+
+    <div class="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
+      <div class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Late</div>
+      <div class="text-3xl font-bold text-amber-500">{{ late_today }}</div>
+    </div>
+
+    <div class="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
+      <div class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Absent</div>
+      <div class="text-3xl font-bold text-red-500">{{ absent_today }}</div>
+    </div>
+
+    <div class="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
+      <div class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Rate</div>
+      <div class="text-3xl font-bold text-purple-600">{{ attendance_pct }}%</div>
+      {% if defaulters_count > 0 %}
+        <div class="text-xs text-red-500 mt-1">{{ defaulters_count }} defaulter(s)</div>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <!-- Chart + Live Stream -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <div class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
+      <h2 class="text-base font-semibold text-slate-800 dark:text-white mb-4">Weekly Attendance</h2>
+      <canvas id="weeklyChart" height="120"></canvas>
+    </div>
+
+    <!-- Live camera stream -->
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <div class="px-5 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2">
+        <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+        <h2 class="text-sm font-semibold text-slate-800 dark:text-white">Live Camera Feed</h2>
+      </div>
+      <div class="relative bg-black">
+        <img src="{{ url_for('api.camera_stream') }}"
+             class="w-full object-cover"
+             style="height: 200px;"
+             alt="Live camera feed"
+             onerror="this.style.display='none'; document.getElementById('stream-error').style.display='flex'"/>
+        <div id="stream-error" class="hidden w-full items-center justify-center bg-slate-900 text-slate-400 text-xs text-center p-4"
+             style="height:200px;">
+          Start recognition engine to see live feed
+        </div>
+      </div>
+      <div class="px-5 py-3 space-y-2">
+        <h3 class="text-xs font-medium text-slate-500 dark:text-slate-400">Quick Actions</h3>
+        <a href="{{ url_for('attendance.index') }}"
+           class="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors text-xs text-slate-700 dark:text-slate-300">
+          View Today's Attendance
+        </a>
+        <a href="{{ url_for('reports.export_csv') }}"
+           class="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors text-xs text-slate-700 dark:text-slate-300">
+          Export CSV
+        </a>
+        <a href="{{ url_for('reports.index') }}"
+           class="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors text-xs text-slate-700 dark:text-slate-300">
+          View Defaulters
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Recent activity -->
+  <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+    <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+      <h2 class="text-base font-semibold text-slate-800 dark:text-white">Recent Activity</h2>
+      <a href="{{ url_for('attendance.index') }}" class="text-sm text-blue-600 hover:text-blue-500">View all</a>
+    </div>
+    <div class="overflow-x-auto">
+      {% if recent_list %}
+      <table class="w-full">
+        <thead>
+          <tr class="text-xs font-medium text-slate-500 bg-slate-50 dark:bg-slate-700">
+            <th class="px-5 py-3 text-left">Student</th>
+            <th class="px-5 py-3 text-left">Subject</th>
+            <th class="px-5 py-3 text-left">Time</th>
+            <th class="px-5 py-3 text-left">Confidence</th>
+            <th class="px-5 py-3 text-left">Photo</th>
+            <th class="px-5 py-3 text-left">Status</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+          {% for r in recent_list %}
+          <tr class="hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+            <td class="px-5 py-3">
+              <div class="font-medium text-slate-800 dark:text-white text-sm">{{ r.name }}</div>
+              <div class="text-xs text-slate-400">{{ r.reg }}</div>
+            </td>
+            <td class="px-5 py-3 text-sm text-slate-600 dark:text-slate-300">{{ r.subject }}</td>
+            <td class="px-5 py-3 text-sm text-slate-600 dark:text-slate-300 font-mono">{{ r.time }}</td>
+            <td class="px-5 py-3">
+              <div class="flex items-center gap-2">
+                <div class="w-16 bg-slate-100 rounded-full h-1.5">
+                  <div class="bg-blue-500 h-1.5 rounded-full" style="width:{{ (r.confidence|float*100)|int }}%"></div>
+                </div>
+                <span class="text-xs text-slate-500">{{ r.confidence }}</span>
+              </div>
+            </td>
+            <td class="px-5 py-3">
+              {% if r.photo_path %}
+                <img src="/{{ r.photo_path }}" class="w-8 h-8 rounded object-cover cursor-pointer"
+                     onclick="showPhoto('/{{ r.photo_path }}', '{{ r.name }}')"
+                     alt="{{ r.name }}"/>
+              {% else %}
+                <span class="text-xs text-slate-400">—</span>
+              {% endif %}
+            </td>
+            <td class="px-5 py-3">
+              <span class="px-2 py-1 rounded-full text-xs font-medium
+                {% if r.status == 'present' %}bg-green-100 text-green-700
+                {% elif r.status == 'late' %}bg-amber-100 text-amber-700
+                {% else %}bg-blue-100 text-blue-700{% endif %}">
+                {{ r.status|capitalize }}
+              </span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="px-5 py-10 text-center text-slate-400 text-sm">
+        No attendance records yet.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+<!-- Photo modal -->
+<div id="photoModal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center"
+     onclick="this.classList.add('hidden')">
+  <div class="bg-white rounded-xl p-4 max-w-sm w-full mx-4" onclick="event.stopPropagation()">
+    <div id="photoModalName" class="font-semibold text-slate-800 mb-3 text-sm"></div>
+    <img id="photoModalImg" src="" class="w-full rounded-lg object-cover" alt=""/>
+    <button onclick="document.getElementById('photoModal').classList.add('hidden')"
+            class="mt-3 w-full py-2 bg-slate-100 rounded-lg text-sm text-slate-600 hover:bg-slate-200">Close</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function showPhoto(src, name) {
+    document.getElementById('photoModalImg').src = src;
+    document.getElementById('photoModalName').textContent = name;
+    document.getElementById('photoModal').classList.remove('hidden');
+  }
+
+  const ctx = document.getElementById('weeklyChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: {{ weekly_labels|tojson }},
+      datasets: [
+        {
+          label: 'Present',
+          data: {{ weekly_present|tojson }},
+          backgroundColor: 'rgba(34,197,94,0.8)',
+          borderRadius: 4,
+        },
+        {
+          label: 'Late',
+          data: {{ weekly_late|tojson }},
+          backgroundColor: 'rgba(245,158,11,0.8)',
+          borderRadius: 4,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: true } },
+      scales: {
+        y: { beginAtZero:true, stacked:true, grid:{color:'#f1f5f9'}, ticks:{stepSize:1} },
+        x: { stacked:true, grid:{display:false} }
+      }
+    }
+  });
+</script>
+{% endblock %}

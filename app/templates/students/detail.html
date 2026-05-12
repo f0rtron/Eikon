@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block title %}{{ student.name }} — Smart Attendance{% endblock %}
+
+{% block content %}
+<div class="p-6 space-y-6">
+
+  <!-- Header -->
+  <div class="flex items-center gap-4">
+    <a href="{{ url_for('students.index') }}"
+       class="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+      <svg class="w-5 h-5 text-slate-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+    </a>
+    <div class="flex-1">
+      <div class="flex items-center gap-3">
+        <h1 class="text-2xl font-bold text-slate-800 dark:text-white">{{ student.name }}</h1>
+        {% if student.needs_reregistration %}
+          <span class="px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-semibold">
+            ⚠ Re-registration needed
+          </span>
+        {% endif %}
+      </div>
+      <p class="text-slate-500 text-sm mt-0.5 font-mono">{{ student.reg_number }}</p>
+    </div>
+  </div>
+
+  <!-- Info cards -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
+      <div class="text-xs text-slate-500 mb-1">Sessions Attended</div>
+      <div class="text-2xl font-bold text-blue-600">{{ total_marked }}</div>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
+      <div class="text-xs text-slate-500 mb-1">Present on Time</div>
+      <div class="text-2xl font-bold text-green-600">{{ present_cnt }}</div>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
+      <div class="text-xs text-slate-500 mb-1">Late Arrivals</div>
+      <div class="text-2xl font-bold text-amber-500">{{ late_cnt }}</div>
+    </div>
+    <div class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
+      <div class="text-xs text-slate-500 mb-1">Avg Confidence</div>
+      <div class="text-2xl font-bold {% if avg_conf >= rereg_threshold %}text-green-600{% else %}text-red-500{% endif %}">
+        {{ avg_conf }}
+      </div>
+      <div class="text-xs text-slate-400 mt-1">threshold: {{ rereg_threshold }}</div>
+    </div>
+  </div>
+
+  <!-- Confidence graph -->
+  <div class="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h2 class="text-base font-semibold text-slate-800 dark:text-white">Recognition Confidence Over Time</h2>
+        <p class="text-xs text-slate-400 mt-0.5">
+          A declining trend means face re-registration is needed.
+          Threshold: {{ rereg_threshold }}
+        </p>
+      </div>
+      {% if student.needs_reregistration %}
+      <span class="px-3 py-1.5 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg text-xs font-medium">
+        ⚠ Confidence below threshold
+      </span>
+      {% endif %}
+    </div>
+    {% if conf_history %}
+      <canvas id="confChart" height="100"></canvas>
+    {% else %}
+      <div class="py-10 text-center text-slate-400 text-sm">
+        No recognition data yet — run the recognition system first.
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Attendance history -->
+  <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+    <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-700">
+      <h2 class="text-base font-semibold text-slate-800 dark:text-white">
+        Recent Attendance (last {{ records|length }} records)
+      </h2>
+    </div>
+    {% if records %}
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead>
+          <tr class="text-xs font-medium text-slate-500 bg-slate-50 dark:bg-slate-700">
+            <th class="px-5 py-3 text-left">Date</th>
+            <th class="px-5 py-3 text-left">Status</th>
+            <th class="px-5 py-3 text-left">Confidence</th>
+            <th class="px-5 py-3 text-left">Photo</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+          {% for r in records %}
+          <tr class="hover:bg-slate-50 dark:hover:bg-slate-700">
+            <td class="px-5 py-3 text-sm font-mono text-slate-600 dark:text-slate-300">{{ r.date }}</td>
+            <td class="px-5 py-3">
+              <span class="px-2 py-1 rounded-full text-xs font-medium
+                {% if r.status == 'present' %}bg-green-100 text-green-700
+                {% elif r.status == 'late' %}bg-amber-100 text-amber-700
+                {% else %}bg-blue-100 text-blue-700{% endif %}">
+                {{ r.status|capitalize }}
+              </span>
+            </td>
+            <td class="px-5 py-3">
+              <div class="flex items-center gap-2">
+                <div class="w-20 bg-slate-100 rounded-full h-1.5">
+                  <div class="h-1.5 rounded-full {% if r.confidence >= rereg_threshold %}bg-green-500{% else %}bg-red-400{% endif %}"
+                       style="width: {{ (r.confidence * 100)|int }}%"></div>
+                </div>
+                <span class="text-xs font-mono text-slate-500">{{ r.confidence }}</span>
+              </div>
+            </td>
+            <td class="px-5 py-3">
+              {% if r.photo_path %}
+                <img src="/{{ r.photo_path }}" class="w-8 h-8 rounded object-cover cursor-pointer"
+                     onclick="showPhoto('/{{ r.photo_path }}')" alt="photo"/>
+              {% else %}
+                <span class="text-xs text-slate-400">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <div class="py-10 text-center text-slate-400 text-sm">No attendance records yet.</div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- Photo modal -->
+<div id="photoModal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center"
+     onclick="this.classList.add('hidden')">
+  <img id="photoModalImg" src="" class="max-w-xs rounded-xl" alt=""/>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showPhoto(src) {
+  document.getElementById('photoModalImg').src = src;
+  document.getElementById('photoModal').classList.remove('hidden');
+}
+
+{% if conf_history %}
+const labels = {{ conf_history | map(attribute='date') | list | tojson }};
+const data   = {{ conf_history | map(attribute='confidence') | list | tojson }};
+const threshold = {{ rereg_threshold }};
+
+const ctx = document.getElementById('confChart').getContext('2d');
+new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: labels,
+    datasets: [
+      {
+        label: 'Confidence Score',
+        data: data,
+        borderColor: '#2563EB',
+        backgroundColor: 'rgba(37,99,235,0.08)',
+        borderWidth: 2,
+        pointRadius: 4,
+        pointBackgroundColor: data.map(v => v >= threshold ? '#16A34A' : '#DC2626'),
+        tension: 0.3,
+        fill: true,
+      },
+      {
+        label: 'Re-registration Threshold',
+        data: Array(labels.length).fill(threshold),
+        borderColor: '#F59E0B',
+        borderWidth: 1.5,
+        borderDash: [6, 3],
+        pointRadius: 0,
+        fill: false,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: true, position: 'top' },
+      tooltip: {
+        callbacks: {
+          label: ctx => `Confidence: ${ctx.parsed.y.toFixed(3)}`
+        }
+      }
+    },
+    scales: {
+      y: {
+        min: 0, max: 1,
+        grid: { color: '#f1f5f9' },
+        ticks: { callback: v => v.toFixed(1) }
+      },
+      x: { grid: { display: false } }
+    }
+  }
+});
+{% endif %}
+</script>
+{% endblock %}

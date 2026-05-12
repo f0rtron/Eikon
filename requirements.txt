@@ -1,0 +1,41 @@
+# ─── Smart Attendance System — Python Dependencies ────────────────────────────
+# Install: pip install -r requirements.txt
+#
+# NOTE for Raspberry Pi:
+#   picamera2 is pre-installed on Raspberry Pi OS — do NOT pip install it.
+#   Run this requirements.txt normally; picamera2 import is guarded by
+#   platform detection in utils/camera.py.
+
+# ─── Core ML / Computer Vision ────────────────────────────────────────────────
+insightface>=0.7.3
+opencv-python>=4.8.0
+numpy>=1.24.0
+Pillow>=10.0.0
+onnxruntime>=1.16.0          # InsightFace model inference engine
+
+# ─── Database ─────────────────────────────────────────────────────────────────
+SQLAlchemy>=2.0.0
+PyMySQL>=1.1.0
+cryptography>=41.0.0         # required by PyMySQL for caching_sha2_password
+
+# ─── Web Framework ────────────────────────────────────────────────────────────
+Flask>=3.0.0
+Flask-Login>=0.6.3
+Flask-WTF>=1.2.0
+Werkzeug>=3.0.0
+
+# ─── Security ─────────────────────────────────────────────────────────────────
+bcrypt>=4.0.0
+
+# ─── Config ───────────────────────────────────────────────────────────────────
+python-dotenv>=1.0.0
+
+# ─── Reports & Export ─────────────────────────────────────────────────────────
+pandas>=2.0.0
+reportlab>=4.0.0             # PDF generation
+
+# ─── GUI (Kiosk Terminal) ─────────────────────────────────────────────────────
+customtkinter>=5.2.0
+
+# ─── Utilities ────────────────────────────────────────────────────────────────
+colorlog>=6.7.0              # coloured terminal log output
