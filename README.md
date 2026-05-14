@@ -15,7 +15,7 @@ Built with InsightFace ArcFace, Flask, CustomTkinter, and Flutter. Runs entirely
 
 ## What it does
 
-The moment a student steps in front of the camera, Eikon runs their face through a 512-dimensional ArcFace embedding, compares it against enrolled students using cosine similarity, checks for liveness (so a printed photo won't fool it), determines whether they arrived on time or late, saves a photo crop as proof, and writes the record to MySQL. All of this happens in under 400 milliseconds.
+The moment a student steps in front of the camera, Eikon runs their face through a 512-dimensional ArcFace embedding, compares it against enrolled students using cosine similarity, checks for liveness (so a printed photo won't fool it), determines whether they arrived on time or late, saves a photo crop as proof, and writes the record to MySQL. All of this happens in under 400 milliseconds..
 
 Teachers get a web dashboard and a Flutter app. Both pull from the same API. The dashboard has a live camera feed so teachers can see the door from their desk. An AI assistant powered by Groq LLaMA 3 answers natural language questions about attendance — who's absent, who's a defaulter, what the week looked like.
 
