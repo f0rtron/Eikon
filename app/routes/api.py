@@ -95,6 +95,45 @@ def mark_attendance():
     })
 
 
+@api_bp.route("/attendance_event", methods=["POST"])
+def attendance_event():
+    """
+    Receives attendance events and broadcasts them in real-time via WebSockets.
+    """
+    data       = request.get_json(silent=True) or {}
+    reg_number = data.get("reg_number")
+    name       = data.get("name")
+    subject_id = data.get("subject_id")
+    confidence = data.get("confidence", 0.0)
+    status     = data.get("status", "present")
+    photo_path = data.get("photo_path", "")
+
+    # Resolve subject code
+    subject_code = "—"
+    if subject_id:
+        try:
+            with db_session() as session:
+                sub = session.get(Subject, int(subject_id))
+                if sub:
+                    subject_code = sub.code
+        except Exception:
+            pass
+
+    # Emit the real-time event via socketio
+    from app import socketio
+    socketio.emit("attendance_marked", {
+        "reg_number": reg_number,
+        "name":       name,
+        "subject":    subject_code,
+        "time":       datetime.now().strftime("%H:%M:%S"),
+        "confidence": f"{float(confidence):.2f}",
+        "status":     status,
+        "photo_path": photo_path
+    })
+
+    return jsonify({"success": True})
+
+
 @api_bp.route("/today")
 def today_stats():
     """Return today's attendance counts — used by kiosk display."""

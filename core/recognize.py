@@ -21,7 +21,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from config import (
     RECOGNITION_THRESHOLD, DUPLICATE_WINDOW_SECS,
     PHOTOS_DIR, LATE_GRACE_MINUTES,
-    REREG_CONFIDENCE_THRESHOLD, REREG_CHECK_LAST_N
+    REREG_CONFIDENCE_THRESHOLD, REREG_CHECK_LAST_N,
+    CAMERA_SOURCE
 )
 from core.face_engine import get_all_faces, cosine_similarity
 from core.train import load_encodings
@@ -145,6 +146,33 @@ class AttendanceMarker:
                         student.needs_reregistration = True
                     self._marked_today[student.id] = now
                     logger.info(f"Marked {att_status}: {student.name} conf={confidence:.3f}")
+
+                    # Notify the local Flask Socket server in a background thread
+                    def trigger_realtime_event(reg, name, sub_id, conf, status, photo):
+                        try:
+                            from config import PORT
+                            import urllib.request as url_req
+                            import json
+                            url = f"http://localhost:{PORT}/api/attendance_event"
+                            payload = json.dumps({
+                                "reg_number": reg,
+                                "name":       name,
+                                "subject_id": sub_id,
+                                "confidence": float(conf),
+                                "status":     status,
+                                "photo_path": photo or ""
+                            }).encode("utf-8")
+                            req = url_req.Request(url, data=payload, headers={"Content-Type": "application/json"})
+                            url_req.urlopen(req, timeout=1.0)
+                        except Exception as e:
+                            logger.debug(f"Failed to broadcast real-time event: {e}")
+
+                    threading.Thread(
+                        target=trigger_realtime_event,
+                        args=(reg_number, student.name, self.subject_id, confidence, att_status, photo_path),
+                        daemon=True
+                    ).start()
+
                     return True, "marked", att_status
                 except Exception as e:
                     logger.warning(f"Duplicate for {reg_number}: {e}")
@@ -160,12 +188,22 @@ class RecognitionEngine:
         self.encodings  = load_encodings()
         self.marker     = AttendanceMarker(subject_id)
         self.spoof      = get_spoof_checker()
+        self.frame_count = 0
+        self.last_results = []
         logger.info(f"RecognitionEngine ready — {len(self.encodings)} students.")
 
     def process_frame(self, frame):
         _set_shared_frame(frame)
+        self.frame_count += 1
+        
+        # Low-end hardware optimization: Only run heavy AI every 3rd frame
+        if self.frame_count % 3 != 0:
+            return self.last_results
+            
         faces = get_all_faces(frame)
-        return [r for r in (self._process_one(frame,f) for f in faces) if r]
+        results = [r for r in (self._process_one(frame,f) for f in faces) if r]
+        self.last_results = results
+        return results
 
     def _process_one(self, frame, face):
         x1,y1,x2,y2 = (int(v) for v in face.bbox)
@@ -239,10 +277,10 @@ def draw_overlay(frame, results):
 
 def run_recognition_loop(subject_id):
     engine = RecognitionEngine(subject_id=subject_id)
-    with Camera(source=0) as cam:
+    with Camera(source=CAMERA_SOURCE) as cam:
         print("\nRecognition running — press Q to quit.\n")
-        cv2.namedWindow("Smart Attendance",cv2.WINDOW_NORMAL)
-        cv2.resizeWindow("Smart Attendance",900,650)
+        cv2.namedWindow("Eikon",cv2.WINDOW_NORMAL)
+        cv2.resizeWindow("Eikon",900,650)
         fps_time,fps,frame_n=time.time(),0,0
         while True:
             frame=cam.read()
@@ -253,7 +291,7 @@ def run_recognition_loop(subject_id):
             if time.time()-fps_time>=1.0:
                 fps=frame_n;frame_n=0;fps_time=time.time()
             cv2.putText(frame,f"FPS:{fps}",(10,25),cv2.FONT_HERSHEY_SIMPLEX,0.65,(180,180,180),1)
-            cv2.imshow("Smart Attendance",frame)
+            cv2.imshow("Eikon",frame)
             if cv2.waitKey(1)&0xFF==ord("q"): break
     cv2.destroyAllWindows()
 

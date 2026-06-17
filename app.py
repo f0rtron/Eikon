@@ -5,12 +5,15 @@ app.py — Flask application entry point
 import logging
 from flask import Flask, send_from_directory
 from flask_login import LoginManager
+from flask_socketio import SocketIO
 
 from config import SECRET_KEY, DEBUG, HOST, PORT, PHOTOS_DIR
 from db.connection import init_db, test_connection
 from db.models import User
 
 logger = logging.getLogger(__name__)
+
+socketio = SocketIO(cors_allowed_origins="*")
 
 
 def create_app() -> Flask:
@@ -21,6 +24,8 @@ def create_app() -> Flask:
     )
     app.config["SECRET_KEY"]       = SECRET_KEY
     app.config["WTF_CSRF_ENABLED"] = False   # disabled for local API routes
+
+    socketio.init_app(app)
 
     # ── Flask-Login ───────────────────────────────────────────────────────────
     login_manager = LoginManager()
@@ -48,6 +53,7 @@ def create_app() -> Flask:
     from app.routes.reports    import reports_bp
     from app.routes.api        import api_bp
     from app.routes.ai         import ai_bp
+    from app.routes.demo       import demo_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
@@ -56,6 +62,7 @@ def create_app() -> Flask:
     app.register_blueprint(reports_bp)
     app.register_blueprint(api_bp, url_prefix="/api")
     app.register_blueprint(ai_bp)
+    app.register_blueprint(demo_bp, url_prefix="/api")
 
     # ── Serve face photos ─────────────────────────────────────────────────────
     @app.route("/photos/<path:filename>")
@@ -74,8 +81,9 @@ if __name__ == "__main__":
     app = create_app()
 
     logger.info(f"Starting Flask on http://{HOST}:{PORT}")
-    print(f"\n  Smart Attendance Dashboard")
+    print(f"\n  Eikon — Face Recognition Attendance")
+    print(f"  Tagline: Your face is your ID. Walk in, you're marked.")
     print(f"  Open in browser:  http://localhost:{PORT}")
     print(f"  Login:            admin / Admin@1234\n")
 
-    app.run(host=HOST, port=PORT, debug=DEBUG)
+    socketio.run(app, host=HOST, port=PORT, debug=DEBUG, allow_unsafe_werkzeug=True)

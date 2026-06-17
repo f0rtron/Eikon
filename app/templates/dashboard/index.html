@@ -1,51 +1,131 @@
 {% extends "base.html" %}
-{% block title %}Dashboard — Smart Attendance{% endblock %}
+{% block title %}Dashboard — Eikon{% endblock %}
 
 {% block content %}
-<div class="p-6 space-y-6">
+<div class="p-6 lg:p-8 space-y-6">
 
   <div class="flex items-center justify-between">
     <div>
-      <h1 class="text-2xl font-bold text-slate-800 dark:text-white">Dashboard</h1>
-      <p class="text-slate-500 dark:text-slate-400 text-sm mt-0.5">{{ today }}</p>
+      <h1 class="page-title">Dashboard</h1>
+      <p class="page-subtitle">{{ today }}</p>
     </div>
-    <a href="{{ url_for('students.add') }}"
-       class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors text-sm font-medium">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-      </svg>
-      Add Student
-    </a>
+    <div class="flex items-center gap-3">
+      <!-- Demo Data Controls -->
+      <div class="relative" id="demoDropdown">
+        <button onclick="toggleDemoMenu()" class="btn flex items-center gap-2 text-[12px]"
+          style="background:var(--color-primary-soft); color:var(--cyprus); border:1px solid var(--color-border);">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+          </svg>
+          Demo Data
+        </button>
+        <div id="demoMenu" class="hidden absolute right-0 mt-2 w-56 rounded-xl shadow-xl z-50 overflow-hidden"
+          style="background:var(--color-card); border:1px solid var(--color-border);">
+          <button onclick="demoAction('seed')" class="w-full px-4 py-3 text-left text-[13px] font-medium flex items-center gap-3 hover:opacity-80 transition"
+            style="color:var(--success);">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Seed Sample Data
+          </button>
+          <div style="border-top:1px solid var(--color-border);"></div>
+          <button onclick="demoAction('clear')" class="w-full px-4 py-3 text-left text-[13px] font-medium flex items-center gap-3 hover:opacity-80 transition"
+            style="color:var(--danger);">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            Clear Demo Data
+          </button>
+        </div>
+      </div>
+      <a href="{{ url_for('students.add') }}" class="btn btn-primary">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        Add Student
+      </a>
+    </div>
   </div>
 
-  <!-- Stats cards — now 5 including Late -->
+  <script>
+    function toggleDemoMenu() {
+      document.getElementById('demoMenu').classList.toggle('hidden');
+    }
+    document.addEventListener('click', e => {
+      if (!document.getElementById('demoDropdown').contains(e.target))
+        document.getElementById('demoMenu').classList.add('hidden');
+    });
+    async function demoAction(action) {
+      document.getElementById('demoMenu').classList.add('hidden');
+      try {
+        const r = await fetch('/api/demo/' + action, { method: 'POST' });
+        const d = await r.json();
+        if (d.success) window.location.reload();
+        else alert('Error: ' + d.message);
+      } catch (e) { alert('Error: ' + e.message); }
+    }
+  </script>
+
+  <!-- Stats cards -->
   <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
 
-    <div class="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
-      <div class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Total Students</div>
-      <div class="text-3xl font-bold text-slate-800 dark:text-white">{{ total_students }}</div>
+    <div class="stat-card stat-total">
+      <div class="flex items-center justify-between mb-3">
+        <div class="stat-label">Total Students</div>
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:var(--color-primary-soft);">
+          <svg class="w-4 h-4" style="color:var(--cyprus);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+          </svg>
+        </div>
+      </div>
+      <div class="stat-value" id="stat-total">{{ total_students }}</div>
     </div>
 
-    <div class="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
-      <div class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Present</div>
-      <div class="text-3xl font-bold text-green-600">{{ present_today }}</div>
+    <div class="stat-card stat-present">
+      <div class="flex items-center justify-between mb-3">
+        <div class="stat-label">Present</div>
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:var(--success-bg);">
+          <svg class="w-4 h-4" style="color:var(--success);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          </svg>
+        </div>
+      </div>
+      <div class="stat-value" style="color:var(--success);" id="stat-present">{{ present_today }}</div>
     </div>
 
-    <div class="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
-      <div class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Late</div>
-      <div class="text-3xl font-bold text-amber-500">{{ late_today }}</div>
+    <div class="stat-card stat-late">
+      <div class="flex items-center justify-between mb-3">
+        <div class="stat-label">Late</div>
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:var(--warning-bg);">
+          <svg class="w-4 h-4" style="color:var(--warning);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+      </div>
+      <div class="stat-value" style="color:var(--warning);" id="stat-late">{{ late_today }}</div>
     </div>
 
-    <div class="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
-      <div class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Absent</div>
-      <div class="text-3xl font-bold text-red-500">{{ absent_today }}</div>
+    <div class="stat-card stat-absent">
+      <div class="flex items-center justify-between mb-3">
+        <div class="stat-label">Absent</div>
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:var(--danger-bg);">
+          <svg class="w-4 h-4" style="color:var(--danger);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </div>
+      </div>
+      <div class="stat-value" style="color:var(--danger);" id="stat-absent">{{ absent_today }}</div>
     </div>
 
-    <div class="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
-      <div class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Rate</div>
-      <div class="text-3xl font-bold text-purple-600">{{ attendance_pct }}%</div>
+    <div class="stat-card stat-rate">
+      <div class="flex items-center justify-between mb-3">
+        <div class="stat-label">Rate</div>
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:var(--info-bg);">
+          <svg class="w-4 h-4" style="color:var(--info);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+          </svg>
+        </div>
+      </div>
+      <div class="stat-value" style="color:var(--info);" id="stat-rate">{{ attendance_pct }}%</div>
       {% if defaulters_count > 0 %}
-        <div class="text-xs text-red-500 mt-1">{{ defaulters_count }} defaulter(s)</div>
+        <div class="text-[11px] font-medium mt-1" style="color:var(--danger);" id="stat-defaulters">{{ defaulters_count }} defaulter(s)</div>
       {% endif %}
     </div>
 
@@ -54,40 +134,49 @@
   <!-- Chart + Live Stream -->
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-    <div class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
-      <h2 class="text-base font-semibold text-slate-800 dark:text-white mb-4">Weekly Attendance</h2>
+    <div class="lg:col-span-2 card p-5">
+      <h2 class="section-title mb-4">Weekly Attendance</h2>
       <canvas id="weeklyChart" height="120"></canvas>
     </div>
 
     <!-- Live camera stream -->
-    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-      <div class="px-5 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2">
-        <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-        <h2 class="text-sm font-semibold text-slate-800 dark:text-white">Live Camera Feed</h2>
+    <div class="card overflow-hidden">
+      <div class="px-5 py-3.5 flex items-center gap-2.5" style="border-bottom:1px solid var(--border);">
+        <div class="live-dot"></div>
+        <h2 class="section-title text-[13.5px]">Live Camera Feed</h2>
       </div>
-      <div class="relative bg-black">
+      <div class="relative" style="background:#0C1B1A;">
         <img src="{{ url_for('api.camera_stream') }}"
              class="w-full object-cover"
              style="height: 200px;"
              alt="Live camera feed"
              onerror="this.style.display='none'; document.getElementById('stream-error').style.display='flex'"/>
-        <div id="stream-error" class="hidden w-full items-center justify-center bg-slate-900 text-slate-400 text-xs text-center p-4"
-             style="height:200px;">
+        <div id="stream-error" class="hidden w-full items-center justify-center text-[12px] text-center p-4"
+             style="height:200px;color:var(--text-muted);background:#0C1B1A;">
           Start recognition engine to see live feed
         </div>
       </div>
-      <div class="px-5 py-3 space-y-2">
-        <h3 class="text-xs font-medium text-slate-500 dark:text-slate-400">Quick Actions</h3>
+      <div class="px-5 py-3.5 space-y-2">
+        <h3 class="text-[11px] font-semibold uppercase tracking-wide" style="color:var(--text-muted);">Quick Actions</h3>
         <a href="{{ url_for('attendance.index') }}"
-           class="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors text-xs text-slate-700 dark:text-slate-300">
+           class="flex items-center gap-2 px-3 py-2 rounded-lg text-[12.5px] font-medium transition-all"
+           style="background:var(--surface-alt);color:var(--text-secondary);"
+           onmouseover="this.style.background='var(--color-primary-soft)';this.style.color='var(--cyprus)'"
+           onmouseout="this.style.background='var(--surface-alt)';this.style.color='var(--text-secondary)'">
           View Today's Attendance
         </a>
         <a href="{{ url_for('reports.export_csv') }}"
-           class="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors text-xs text-slate-700 dark:text-slate-300">
+           class="flex items-center gap-2 px-3 py-2 rounded-lg text-[12.5px] font-medium transition-all"
+           style="background:var(--surface-alt);color:var(--text-secondary);"
+           onmouseover="this.style.background='var(--color-primary-soft)';this.style.color='var(--cyprus)'"
+           onmouseout="this.style.background='var(--surface-alt)';this.style.color='var(--text-secondary)'">
           Export CSV
         </a>
         <a href="{{ url_for('reports.index') }}"
-           class="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors text-xs text-slate-700 dark:text-slate-300">
+           class="flex items-center gap-2 px-3 py-2 rounded-lg text-[12.5px] font-medium transition-all"
+           style="background:var(--surface-alt);color:var(--text-secondary);"
+           onmouseover="this.style.background='var(--color-primary-soft)';this.style.color='var(--cyprus)'"
+           onmouseout="this.style.background='var(--surface-alt)';this.style.color='var(--text-secondary)'">
           View Defaulters
         </a>
       </div>
@@ -96,64 +185,59 @@
   </div>
 
   <!-- Recent activity -->
-  <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
-    <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
-      <h2 class="text-base font-semibold text-slate-800 dark:text-white">Recent Activity</h2>
-      <a href="{{ url_for('attendance.index') }}" class="text-sm text-blue-600 hover:text-blue-500">View all</a>
+  <div class="card overflow-hidden">
+    <div class="px-5 py-4 flex items-center justify-between" style="border-bottom:1px solid var(--border);">
+      <h2 class="section-title">Recent Activity</h2>
+      <a href="{{ url_for('attendance.index') }}" class="text-[13px] font-medium text-cyprus hover:underline" style="color:var(--cyprus);">View all</a>
     </div>
     <div class="overflow-x-auto">
       {% if recent_list %}
-      <table class="w-full">
+      <table class="eikon-table">
         <thead>
-          <tr class="text-xs font-medium text-slate-500 bg-slate-50 dark:bg-slate-700">
-            <th class="px-5 py-3 text-left">Student</th>
-            <th class="px-5 py-3 text-left">Subject</th>
-            <th class="px-5 py-3 text-left">Time</th>
-            <th class="px-5 py-3 text-left">Confidence</th>
-            <th class="px-5 py-3 text-left">Photo</th>
-            <th class="px-5 py-3 text-left">Status</th>
+          <tr>
+            <th>Student</th>
+            <th>Subject</th>
+            <th>Time</th>
+            <th>Confidence</th>
+            <th>Photo</th>
+            <th>Status</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+        <tbody id="recent-activity-body">
           {% for r in recent_list %}
-          <tr class="hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
-            <td class="px-5 py-3">
-              <div class="font-medium text-slate-800 dark:text-white text-sm">{{ r.name }}</div>
-              <div class="text-xs text-slate-400">{{ r.reg }}</div>
+          <tr>
+            <td>
+              <div class="font-medium text-[13px]" style="color:var(--text-primary);">{{ r.name }}</div>
+              <div class="text-[11.5px] font-mono" style="color:var(--text-muted);">{{ r.reg }}</div>
             </td>
-            <td class="px-5 py-3 text-sm text-slate-600 dark:text-slate-300">{{ r.subject }}</td>
-            <td class="px-5 py-3 text-sm text-slate-600 dark:text-slate-300 font-mono">{{ r.time }}</td>
-            <td class="px-5 py-3">
-              <div class="flex items-center gap-2">
-                <div class="w-16 bg-slate-100 rounded-full h-1.5">
-                  <div class="bg-blue-500 h-1.5 rounded-full" style="width:{{ (r.confidence|float*100)|int }}%"></div>
+            <td>{{ r.subject }}</td>
+            <td class="font-mono">{{ r.time }}</td>
+            <td>
+              <div class="conf-bar">
+                <div class="conf-track">
+                  <div class="conf-fill" style="width:{{ (r.confidence|float*100)|int }}%"></div>
                 </div>
-                <span class="text-xs text-slate-500">{{ r.confidence }}</span>
+                <span class="conf-label">{{ r.confidence }}</span>
               </div>
             </td>
-            <td class="px-5 py-3">
+            <td>
               {% if r.photo_path %}
-                <img src="/{{ r.photo_path }}" class="w-8 h-8 rounded object-cover cursor-pointer"
+                <img src="/{{ r.photo_path }}" class="photo-thumb"
                      onclick="showPhoto('/{{ r.photo_path }}', '{{ r.name }}')"
                      alt="{{ r.name }}"/>
               {% else %}
-                <span class="text-xs text-slate-400">—</span>
+                <span style="color:var(--text-muted);">—</span>
               {% endif %}
             </td>
-            <td class="px-5 py-3">
-              <span class="px-2 py-1 rounded-full text-xs font-medium
-                {% if r.status == 'present' %}bg-green-100 text-green-700
-                {% elif r.status == 'late' %}bg-amber-100 text-amber-700
-                {% else %}bg-blue-100 text-blue-700{% endif %}">
-                {{ r.status|capitalize }}
-              </span>
+            <td>
+              <span class="badge badge-{{ r.status }}">{{ r.status|capitalize }}</span>
             </td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
       {% else %}
-      <div class="px-5 py-10 text-center text-slate-400 text-sm">
+      <div class="px-5 py-12 text-center text-[13px]" style="color:var(--text-muted);">
         No attendance records yet.
       </div>
       {% endif %}
@@ -163,24 +247,37 @@
 </div>
 
 <!-- Photo modal -->
-<div id="photoModal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center"
-     onclick="this.classList.add('hidden')">
-  <div class="bg-white rounded-xl p-4 max-w-sm w-full mx-4" onclick="event.stopPropagation()">
-    <div id="photoModalName" class="font-semibold text-slate-800 mb-3 text-sm"></div>
-    <img id="photoModalImg" src="" class="w-full rounded-lg object-cover" alt=""/>
+<div id="photoModal" class="hidden modal-backdrop" onclick="this.classList.add('hidden')">
+  <div class="modal-card" onclick="event.stopPropagation()">
+    <div id="photoModalName" class="font-semibold text-[14px] mb-3" style="color:var(--text-primary);"></div>
+    <img id="photoModalImg" src="" class="w-full rounded-xl object-cover" alt=""/>
     <button onclick="document.getElementById('photoModal').classList.add('hidden')"
-            class="mt-3 w-full py-2 bg-slate-100 rounded-lg text-sm text-slate-600 hover:bg-slate-200">Close</button>
+            class="btn btn-outline w-full mt-3 text-[13px]">Close</button>
   </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
+<style>
+  @keyframes rowFadeIn {
+    from { background-color: rgba(0, 70, 67, 0.2); opacity: 0; transform: translateY(-10px); }
+    to { background-color: transparent; opacity: 1; transform: translateY(0); }
+  }
+  .new-row {
+    animation: rowFadeIn 0.8s ease-out forwards;
+  }
+</style>
+
 <script>
   function showPhoto(src, name) {
     document.getElementById('photoModalImg').src = src;
     document.getElementById('photoModalName').textContent = name;
     document.getElementById('photoModal').classList.remove('hidden');
   }
+
+  const isDark = document.documentElement.classList.contains('dark');
+  const gridColor = isDark ? 'rgba(37,69,67,0.5)' : '#f1f5f9';
+  const textColor = isDark ? '#6B8180' : '#94a3b8';
 
   const ctx = document.getElementById('weeklyChart').getContext('2d');
   new Chart(ctx, {
@@ -191,23 +288,115 @@
         {
           label: 'Present',
           data: {{ weekly_present|tojson }},
-          backgroundColor: 'rgba(34,197,94,0.8)',
-          borderRadius: 4,
+          backgroundColor: isDark ? 'rgba(5,150,105,0.7)' : 'rgba(5,150,105,0.8)',
+          borderRadius: 6,
+          borderSkipped: false,
         },
         {
           label: 'Late',
           data: {{ weekly_late|tojson }},
-          backgroundColor: 'rgba(245,158,11,0.8)',
-          borderRadius: 4,
+          backgroundColor: isDark ? 'rgba(217,119,6,0.7)' : 'rgba(245,158,11,0.8)',
+          borderRadius: 6,
+          borderSkipped: false,
         }
       ]
     },
     options: {
       responsive: true,
-      plugins: { legend: { display: true } },
+      plugins: {
+        legend: {
+          display: true,
+          labels: { color: textColor, font: { size: 11, family: 'Inter' }, boxWidth: 12, borderRadius: 3 }
+        }
+      },
       scales: {
-        y: { beginAtZero:true, stacked:true, grid:{color:'#f1f5f9'}, ticks:{stepSize:1} },
-        x: { stacked:true, grid:{display:false} }
+        y: { beginAtZero:true, stacked:true, grid:{color:gridColor}, ticks:{stepSize:1, color:textColor, font:{size:11}} },
+        x: { stacked:true, grid:{display:false}, ticks:{color:textColor, font:{size:11}} }
+      }
+    }
+  });
+
+  // ── WebSockets Real-Time Client ────────────────────────────────────────────
+  const socket = io();
+
+  socket.on('connect', () => {
+    console.log('Eikon Real-Time WebSocket connected.');
+  });
+
+  socket.on('attendance_marked', (data) => {
+    // 1. Update Stats Cards Live
+    const presentEl = document.getElementById('stat-present');
+    const lateEl = document.getElementById('stat-late');
+    const absentEl = document.getElementById('stat-absent');
+    const rateEl = document.getElementById('stat-rate');
+    const totalEl = document.getElementById('stat-total');
+
+    if (presentEl && lateEl && absentEl && rateEl && totalEl) {
+      let presentVal = parseInt(presentEl.textContent) || 0;
+      let lateVal = parseInt(lateEl.textContent) || 0;
+      let totalVal = parseInt(totalEl.textContent) || 0;
+
+      if (data.status === 'present') {
+        presentVal += 1;
+        presentEl.textContent = presentVal;
+        presentEl.classList.add('scale-110');
+        setTimeout(() => presentEl.classList.remove('scale-110'), 300);
+      } else if (data.status === 'late') {
+        lateVal += 1;
+        lateEl.textContent = lateVal;
+        lateEl.classList.add('scale-110');
+        setTimeout(() => lateEl.classList.remove('scale-110'), 300);
+      }
+
+      const absentVal = Math.max(0, totalVal - presentVal - lateVal);
+      absentEl.textContent = absentVal;
+
+      if (totalVal > 0) {
+        const newRate = Math.round(((presentVal + lateVal) / totalVal) * 100);
+        rateEl.textContent = newRate + '%';
+      }
+    }
+
+    // 2. Add New Row to Table
+    const tbody = document.getElementById('recent-activity-body');
+    if (tbody) {
+      const newRow = document.createElement('tr');
+      newRow.className = 'new-row';
+      
+      const confPct = Math.round(parseFloat(data.confidence) * 100);
+      const photoHtml = data.photo_path 
+        ? `<img src="/${data.photo_path}" class="photo-thumb" onclick="showPhoto('/${data.photo_path}', '${data.name}')" alt="${data.name}"/>`
+        : `<span style="color:var(--text-muted);">—</span>`;
+
+      const statusBadgeClass = data.status === 'present' ? 'present' : (data.status === 'late' ? 'late' : 'unknown');
+      const displayStatus = data.status.charAt(0).toUpperCase() + data.status.slice(1);
+
+      newRow.innerHTML = `
+        <td>
+          <div class="font-medium text-[13px]" style="color:var(--text-primary);">${data.name}</div>
+          <div class="text-[11.5px] font-mono" style="color:var(--text-muted);">${data.reg_number}</div>
+        </td>
+        <td>${data.subject}</td>
+        <td class="font-mono">${data.time}</td>
+        <td>
+          <div class="conf-bar">
+            <div class="conf-track">
+              <div class="conf-fill" style="width:${confPct}%"></div>
+            </div>
+            <span class="conf-label">${data.confidence}</span>
+          </div>
+        </td>
+        <td>${photoHtml}</td>
+        <td>
+          <span class="badge badge-${statusBadgeClass}">${displayStatus}</span>
+        </td>
+      `;
+
+      tbody.insertBefore(newRow, tbody.firstChild);
+
+      // Clip table list to recent 10 items
+      if (tbody.children.length > 10) {
+        tbody.removeChild(tbody.lastChild);
       }
     }
   });

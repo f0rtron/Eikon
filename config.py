@@ -1,5 +1,5 @@
 """
-config.py — Central configuration for Smart Attendance System
+config.py — Central configuration for Eikon Attendance System
 All settings loaded from .env file. Never hardcode secrets.
 """
 
@@ -35,8 +35,11 @@ HOST       = os.getenv("HOST", "0.0.0.0")
 PORT       = int(os.getenv("PORT", 5000))
 
 # ─── Camera ───────────────────────────────────────────────────────────────────
-CAMERA_SOURCE  = int(os.getenv("CAMERA_SOURCE", 0))
+_cam_src = os.getenv("CAMERA_SOURCE", "0")
+CAMERA_SOURCE  = int(_cam_src) if _cam_src.isdigit() else _cam_src
 STREAM_QUALITY = int(os.getenv("STREAM_QUALITY", 70))
+CAMERA_WIDTH   = int(os.getenv("CAMERA_WIDTH", 1280))
+CAMERA_HEIGHT  = int(os.getenv("CAMERA_HEIGHT", 720))
 
 # ─── Face Recognition ─────────────────────────────────────────────────────────
 MODEL_NAME            = os.getenv("MODEL_NAME", "buffalo_sc")
@@ -79,9 +82,13 @@ logging.basicConfig(
     ],
 )
 
-logger = logging.getLogger("smart-attendance")
+logger = logging.getLogger("eikon")
 logger.info(f"Config loaded. DB: {DB_HOST}/{DB_NAME} | Model: {MODEL_NAME}")
 
-# ─── Groq AI ──────────────────────────────────────────────────────────────────
+# ─── Groq AI (backend — branded as "Nixa" in UI) ─────────────────────────────
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GROQ_MODEL   = os.getenv("GROQ_MODEL", "llama3-8b-8192")
+
+# ─── Semester Dates (admin-configurable for heatmap) ─────────────────────────
+SEMESTER_START = os.getenv("SEMESTER_START", "")   # e.g. "2026-02-01"
+SEMESTER_END   = os.getenv("SEMESTER_END", "")     # e.g. "2026-06-15"

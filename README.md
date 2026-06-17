@@ -1,457 +1,217 @@
-# Eikon
+<p align="center">
+  <img src="app/static/img/logo_icon_cyprus.png" alt="Eikon Logo" width="100">
+</p>
 
-**Your face is your ID. Walk in, you're marked.**
+<h1 align="center">E I K O N</h1>
+<p align="center">
+  <strong>Smart Attendance System</strong><br>
+  <em>Your face is your ID.</em>
+</p>
 
-Eikon is a face recognition attendance system built for real classrooms. Students walk through the door, the system recognises them in under a second, and attendance is marked automatically. No roll calls, no cards, no apps to open. Just show up.
+<p align="center">
+  <img src="https://img.shields.io/badge/python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
+  <img src="https://img.shields.io/badge/PyQt6-Desktop_GUI-41CD52?style=for-the-badge&logo=qt&logoColor=white" alt="PyQt6">
+  <img src="https://img.shields.io/badge/Flask-Web_Dashboard-000000?style=for-the-badge&logo=flask&logoColor=white" alt="Flask">
+  <img src="https://img.shields.io/badge/MySQL-Database-4479A1?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL">
+  <img src="https://img.shields.io/badge/Flutter-Mobile_App-02569B?style=for-the-badge&logo=flutter&logoColor=white" alt="Flutter">
+  <img src="https://img.shields.io/badge/InsightFace-AI_Engine-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white" alt="InsightFace">
+</p>
 
-Built with InsightFace ArcFace, Flask, CustomTkinter, and Flutter. Runs entirely on a local network — no internet, no cloud dependency, no monthly fees.
+---
 
-![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat&logo=python&logoColor=white)
-![Flask](https://img.shields.io/badge/Flask-3.0-000000?style=flat&logo=flask)
-![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?style=flat&logo=flutter)
-![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=flat&logo=mysql&logoColor=white)
-![InsightFace](https://img.shields.io/badge/InsightFace-ArcFace-FF6B35?style=flat)
+## What is Eikon?
 
+Eikon is a full-stack biometric attendance system that uses **real-time face recognition** to automate student attendance tracking. It combines a PyQt6 desktop hub, a Flask web dashboard, a fullscreen kiosk terminal, and a Flutter mobile app into a single unified platform.
 
-## What it does
+The system captures student faces during registration, trains 512-dimensional embeddings using InsightFace, and then identifies students live through any standard webcam. Anti-spoof detection rejects printed photos and phone screens.
 
-The moment a student steps in front of the camera, Eikon runs their face through a 512-dimensional ArcFace embedding, compares it against enrolled students using cosine similarity, checks for liveness (so a printed photo won't fool it), determines whether they arrived on time or late, saves a photo crop as proof, and writes the record to MySQL. All of this happens in under 400 milliseconds.
+---
 
-Teachers get a web dashboard and a Flutter app. Both pull from the same API. The dashboard has a live camera feed so teachers can see the door from their desk. An AI assistant powered by Groq LLaMA 3 answers natural language questions about attendance — who's absent, who's a defaulter, what the week looked like.
+## Features
 
+| Feature | Description |
+|---------|-------------|
+| **Eikon Hub** | PyQt6 desktop command center with action cards, status LEDs, live stats, developer console, and dark/light theme |
+| **Guided Registration** | Kiosk-mode face capture with head-turn instructions. 30 images per student, automatic progress tracking |
+| **AI Training** | One-click encoding generation. InsightFace buffalo_sc model extracts 512D face embeddings |
+| **Live Recognition** | Real-time attendance scanning with color-coded feedback (green/amber/red/blue) |
+| **Anti-Spoof Detection** | Rejects printed photos, phone screens, and masks using liveness analysis |
+| **Web Dashboard** | Flask-powered admin panel with live camera stream, attendance tables, analytics, and reports |
+| **Kiosk Mode** | Fullscreen door-mount interface with pulsing idle animation and auto-scan |
+| **Late Detection** | Configurable grace period. Amber status for late arrivals based on class schedule |
+| **AI Assistant (Nixa)** | Groq-powered LLM chat. Ask natural language questions about attendance data |
+| **PDF Reports** | Export attendance reports with formatted tables |
+| **CSV Import** | Bulk student registration via CSV upload |
+| **Email Alerts** | Automated absence notifications via SMTP |
+| **Demo Data** | One-click seed/clear of 50 demo students + 14 days of attendance logs |
+| **Flutter Mobile** | Admin mobile app with configurable server IP for WiFi-based access |
 
-## Four interfaces, one backend
+---
 
-**Kiosk Terminal** — fullscreen CustomTkinter app for the classroom door. Animated state machine: idle shows a pulsing ring, scanning fills an arc, green screen means marked present, amber means late, red means unknown or spoof. 8-frame confirmation prevents false marks from someone walking past.
+## Tech Stack
 
-**Web Dashboard** — Flask with Tailwind CSS. Cyprus and Sand colour theme. Weekly stacked bar chart, live camera feed, student detail pages with recognition confidence graphs, bulk CSV import, PDF and CSV export.
-
-**Flutter Mobile App** — five screens: Dashboard, Attendance, Students, Reports, and an AI chat interface. Offline mode caches up to an hour of data so teachers can check attendance even when the server is unreachable.
-
-**AI Assistant** — Groq LLaMA 3.3 70B with live database context injected into every prompt. Answers questions like "which students are at risk of becoming defaulters?" using actual records, not generic responses.
-
-
-## Prerequisites
-
-You need these installed before anything else.
-
-| Software | Version | Notes |
-|-|-|-|
-| Python | 3.11 exactly | 3.12 and 3.13 break InsightFace on Windows |
-| MySQL Server | 8.0 or later | Community edition is fine |
-| Flutter SDK | 3.x | Only needed for the mobile app |
-| Git | Any | For cloning and contributing |
-
-On Mac and Linux, Python 3.11 is recommended but InsightFace installs cleanly on newer versions too. The version restriction only matters on Windows.
-
-
-## Installation
-
-### Clone the repo
-
-```bash
-git clone https://github.com/YOUR_USERNAME/eikon.git
-cd eikon
+```
+Frontend        PyQt6 (Hub + Kiosk)  /  Jinja2 + JS (Web Dashboard)  /  Flutter (Mobile)
+Backend         Flask, Flask-SocketIO, Flask-Login
+AI Engine       InsightFace (buffalo_sc), ONNX Runtime, OpenCV
+Database        MySQL 8.0, SQLAlchemy ORM, PyMySQL
+LLM             Groq API (llama-3.3-70b-versatile)
+Auth            bcrypt password hashing, session-based login
+Reports         ReportLab (PDF), Pandas (data processing)
 ```
 
-### Create a virtual environment with Python 3.11
+---
+
+## Quick Start
+
+### Prerequisites
+
+- Python 3.10+
+- MySQL Server 8.0+
+- Webcam (built-in or USB)
+- Internet connection (first run only, for AI model download)
+
+### Automated Setup (Windows)
 
 ```bash
-# Windows
-py -3.11 -m venv venv
+# Double-click setup.bat or run from terminal:
+setup.bat
+```
+
+The script handles everything: virtual environment, dependencies, database creation, and configuration.
+
+### Manual Setup
+
+```bash
+# 1. Create virtual environment
+python -m venv venv
 venv\Scripts\activate
 
-# Mac or Linux
-python3.11 -m venv venv
-source venv/bin/activate
-```
+# 2. Install dependencies
+pip install -r requirements.txt
 
-Verify:
-```bash
-python version
-# Should print: Python 3.11.x
-```
-
-### Install InsightFace — Windows only
-
-InsightFace has a C++ extension that fails to compile on Windows with standard pip. Use a prebuilt wheel instead. Run these in order and do not skip steps.
-
-```bash
-pip install "numpy==1.26.4"
-
-pip install https://github.com/Gourieff/Assets/raw/main/Insightface/insightface-0.7.3-cp311-cp311-win_amd64.whl no-deps
-
-pip install "opencv-python==4.8.1.78" no-deps
-
-pip install onnxruntime onnx
-
-pip uninstall albucore albumentations -y
-pip install "albucore==0.0.24" no-deps
-pip install "albumentations==1.4.3" no-deps
-pip install PyYAML pydantic simsimd stringzilla
-
-pip install matplotlib no-deps
-pip install cycler kiwisolver pyparsing python-dateutil contourpy fonttools
-```
-
-On Mac or Linux, just run:
-```bash
-pip install insightface
-```
-
-### Install remaining packages
-
-```bash
-pip install Flask Flask-Login Flask-WTF Werkzeug
-pip install SQLAlchemy PyMySQL cryptography
-pip install bcrypt python-dotenv requests
-pip install pandas reportlab
-pip install customtkinter colorlog
-```
-
-### Verify the installation
-
-```bash
-python -c "
-import numpy as np, cv2, insightface
-print('NumPy:', np.__version__)
-print('OpenCV:', cv2.__version__)
-print('InsightFace:', insightface.__version__)
-print('All good.')
-"
-```
-
-NumPy must be 1.26.4, OpenCV 4.8.1, InsightFace 0.7.3. If any of these differ, the system will not work correctly on Windows.
-
-
-## Configuration
-
-Copy the example env file and fill in your values:
-
-```bash
+# 3. Configure environment
 cp .env.example .env
-```
+# Edit .env with your MySQL password
 
-Open .env in any text editor. The fields you must fill in are marked with a comment.
-
-```env
-# REQUIRED — your MySQL root password
-DB_PASSWORD=your_password_here
-
-# REQUIRED — any random 32+ character string
-SECRET_KEY=pick-any-long-random-string-here
-
-# REQUIRED — get a free key at console.groq.com
-GROQ_API_KEY=gsk_your_key_here
-
-# Leave everything else at default for now
-```
-
-Everything else in the file has sensible defaults. You can tune recognition thresholds, late arrival grace periods, and camera source once the system is running.
-
-
-## Database Setup
-
-### Start MySQL
-
-```bash
-# Windows
-net start MySQL80
-
-# Mac
-brew services start mysql
-
-# Linux
-sudo systemctl start mysql
-```
-
-### Create the tables
-
-Windows PowerShell:
-```bash
-$env:PATH += ";C:\Program Files\MySQL\MySQL Server 8.0\bin"
-Get-Content db/schema.sql | mysql -u root -p
-```
-
-Mac or Linux:
-```bash
+# 4. Create database
 mysql -u root -p < db/schema.sql
+
+# 5. Launch
+python run.py
 ```
 
-### Set the admin password
+---
 
-The schema inserts a placeholder hash. Generate a real one for your chosen password:
+## Usage
+
+### Launch Modes
 
 ```bash
-python -c "import bcrypt; print(bcrypt.hashpw(b'YourPassword', bcrypt.gensalt(12)).decode())"
+python run.py            # Eikon Hub (desktop GUI)
+python run.py --web      # Flask web dashboard (localhost:5000)
+python run.py --kiosk    # Fullscreen kiosk terminal
 ```
 
-Then update it in MySQL:
+### Workflow (all from inside the Hub)
 
-```bash
-mysql -u root -p smart_attendance
-```
+1. **Register** - Click Register card, enter student details, camera captures 30 face images
+2. **Train** - Click Train card, generates face encodings from all registered students
+3. **Recognize** - Click Recognize card, select subject, live attendance scanning begins
+4. **Dashboard** - Click Dashboard card, opens web admin panel in browser
 
-```sql
-UPDATE users SET password_hash='paste_hash_here' WHERE username='admin';
-EXIT;
-```
+### Recognition Feedback
 
-### Verify everything
+| Color | Status |
+|-------|--------|
+| 🟢 Green | Recognized, attendance marked |
+| 🟡 Amber | Recognized but late |
+| 🔵 Blue | Already marked today |
+| 🔴 Red | Unknown face |
+| ⚫ Dark Red | Spoof detected |
 
-```bash
-python test_day2.py
-```
-
-All five checks should pass. If the database check fails, the password or service is the issue. If the camera check fails, something else has the webcam open.
-
-
-## Running Eikon
-
-### Register a student
-
-```bash
-python core/register.py
-```
-
-The camera opens. The student sits in front of it. 30 images are captured automatically over about 30 seconds — the system guides them to vary their angle slightly. Run this once per student.
-
-### Train face encodings
-
-Run this after every registration session:
-
-```bash
-python core/train.py
-```
-
-This reads all the captured images, generates 512-dimensional face embeddings, and saves them to encodings/encodings.pkl. Takes about 5 seconds on first run while the model downloads.
-
-### Start the web dashboard
-
-```bash
-python app.py
-```
-
-Open your browser at http://localhost:5000 and log in with the admin credentials you set earlier.
-
-### Start the kiosk
-
-Open a second terminal:
-
-```bash
-python gui/kiosk.py subject 1
-```
-
-To find your subject IDs:
-```bash
-mysql -u root -p -e "USE smart_attendance; SELECT id, code, name FROM subjects;"
-```
-
-Press ESC to exit the kiosk. Press F11 to toggle fullscreen.
-
-### Live recognition without the kiosk
-
-For testing without the fullscreen interface:
-
-```bash
-python core/recognize.py subject 1
-```
-
-Press Q to quit.
-
-
-## Flutter Mobile App
-
-### Set your server address
-
-Open smart_attendance_app/lib/core/constants.dart and update the baseUrl:
-
-```dart
-static const String baseUrl = 'http://YOUR_LAPTOP_IP:5000';
-```
-
-Find your laptop's IP address:
-
-```bash
-# Windows
-ipconfig
-# Look for IPv4 Address under your WiFi adapter
-
-# Mac or Linux
-ifconfig | grep inet
-```
-
-Your phone and laptop must be on the same WiFi network.
-
-### Allow HTTP on Android
-
-Add this attribute to the application tag in smart_attendance_app/android/app/src/main/AndroidManifest.xml:
-
-```xml
-android:usesCleartextTraffic="true"
-```
-
-### Run the app
-
-```bash
-cd smart_attendance_app
-flutter pub get
-flutter run
-```
-
-Log in with the same admin credentials as the web dashboard.
-
+---
 
 ## Project Structure
 
 ```
 eikon/
+├── gui/
+│   ├── eikon_hub.py        # Central Hub (PyQt6 dashboard)
+│   └── kiosk.py            # Fullscreen kiosk (register + attendance)
 ├── core/
-│   ├── face_engine.py       InsightFace singleton — loaded once, shared everywhere
-│   ├── register.py          Student registration and face image capture
-│   ├── train.py             Generate 512D ArcFace embeddings
-│   ├── recognize.py         Live recognition loop with photo capture and late detection
-│   └── anti_spoof.py        Liveness detection — LBP, DFT, gradient analysis
-│
-├── db/
-│   ├── models.py            SQLAlchemy ORM models
-│   ├── connection.py        Engine and session factory
-│   └── schema.sql           MySQL schema — run once to set up
-│
+│   ├── register.py         # Face capture pipeline
+│   ├── train.py            # InsightFace embedding generator
+│   ├── recognize.py        # Real-time face matching loop
+│   ├── face_engine.py      # Shared InsightFace model loader
+│   └── anti_spoof.py       # Liveness detection module
 ├── app/
 │   ├── routes/
-│   │   ├── auth.py          Login and logout
-│   │   ├── dashboard.py     Stats, weekly chart, recent activity
-│   │   ├── students.py      List, add, detail page, bulk import
-│   │   ├── attendance.py    View by date and subject, manual marking
-│   │   ├── reports.py       Summary table, CSV and PDF export
-│   │   ├── api.py           JSON API for Flutter and kiosk
-│   │   └── ai.py            Groq AI endpoints, streaming and non-streaming
-│   ├── templates/           Jinja2 HTML templates
-│   └── static/              CSS and JavaScript
-│
-├── gui/
-│   └── kiosk.py             CustomTkinter fullscreen kiosk terminal
-│
+│   │   ├── api.py          # REST API endpoints
+│   │   ├── dashboard.py    # Dashboard views
+│   │   ├── students.py     # Student CRUD + CSV import
+│   │   ├── reports.py      # PDF export + analytics
+│   │   ├── ai.py           # Groq LLM chat (Nixa)
+│   │   └── demo.py         # Demo data seeder
+│   ├── templates/          # Jinja2 HTML templates
+│   └── static/             # CSS, JS, images
+├── db/
+│   ├── schema.sql          # MySQL table definitions
+│   ├── models.py           # SQLAlchemy ORM models
+│   └── connection.py       # Database session factory
 ├── utils/
-│   ├── camera.py            Hardware abstraction — same code runs on laptop and Pi
-│   ├── email_alert.py       SMTP alerts for absences and defaulters
-│   └── report.py            PDF generation with ReportLab
-│
-├── smart_attendance_app/    Flutter mobile app
-│   └── lib/
-│       ├── core/            API service, auth provider, theme, constants
-│       ├── models/          Data models with fromJson factories
-│       ├── screens/         Dashboard, Attendance, Students, Reports, AI Chat
-│       └── widgets/         Shared components — stat cards, badges, offline banner
-│
-├── dataset/                 Face images per student — not committed to git
-├── encodings/               Trained face embeddings — not committed to git
-├── photos/                  Attendance photo crops — not committed to git
-├── logs/                    Application logs — not committed to git
-│
-├── app.py                   Flask entry point
-├── config.py                Central configuration loaded from .env
-├── requirements.txt         Python dependencies
-└── .env.example             Environment variable template
+│   ├── camera.py           # Cross-platform camera abstraction
+│   └── email_alert.py      # SMTP notification system
+├── config.py               # Central config (reads .env)
+├── app.py                  # Flask application factory
+├── run.py                  # Unified launcher
+├── setup.bat               # One-click Windows setup
+├── requirements.txt        # Python dependencies
+└── .env                    # Local environment variables
 ```
 
+---
 
-## Contributing
+## Configuration
 
-### Branch naming
+All settings are managed through the `.env` file:
 
-```
-feature/what-you-are-adding
-fix/what-you-are-fixing
-docs/what-you-are-documenting
-```
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `CAMERA_SOURCE` | `0` | Webcam index (0 = built-in, 1 = USB) |
+| `MODEL_NAME` | `buffalo_sc` | InsightFace model (`buffalo_l` for higher accuracy) |
+| `RECOGNITION_THRESHOLD` | `0.55` | Face match confidence (lower = more lenient) |
+| `ANTI_SPOOF_THRESHOLD` | `0.45` | Liveness check strictness |
+| `LATE_GRACE_MINUTES` | `10` | Minutes after class start before marking late |
+| `GROQ_MODEL` | `llama-3.3-70b-versatile` | LLM model for the Nixa AI assistant |
+| `PORT` | `5000` | Flask server port |
 
-### Workflow
+---
 
-```bash
-git checkout main
-git pull origin main
-git checkout -b feature/your-feature-name
+## Mobile App
 
-# Make your changes
-git add .
-git commit -m "feat: describe what you did"
-git push origin feature/your-feature-name
-```
+The Flutter admin app connects to the Flask backend over WiFi:
 
-Then open a Pull Request on GitHub. One team member must approve before it can be merged into main.
+1. Both devices on the same network
+2. Start backend from the Hub (click Dashboard)
+3. In the app, tap the connection icon and enter your laptop's local IP
+4. Connects on port 5000
 
-### Commit style
+---
 
-```
-feat: add something new
-fix: fix a bug
-docs: update documentation
-refactor: restructure existing code
-style: formatting only
-```
+## Screenshots
 
+> _Coming soon_
 
-## Troubleshooting
+---
 
-**NumPy binary incompatibility on Windows**
-InsightFace was compiled against NumPy 1.x. If another package upgrades NumPy to 2.x, everything breaks. Fix it by pinning back:
-```bash
-pip install "numpy==1.26.4"
-```
+## License
 
-**MySQL access denied**
-Your DB_PASSWORD in .env does not match your MySQL root password. Verify by connecting manually with `mysql -u root -p`.
+This project was built as an academic project for semester coursework.
 
-**Camera not opening**
-Close any other application using the webcam. If you have multiple cameras, try CAMERA_SOURCE=1 in .env.
+---
 
-**Everyone recognised as Unknown**
-Run `python core/train.py` after registering students. If already done, try lowering RECOGNITION_THRESHOLD to 0.45 in .env and registering in the same lighting conditions as the classroom.
-
-
-**Flutter cannot connect to server**
-Confirm the baseUrl in constants.dart matches your laptop's IP (use ipconfig to check). Flask must show "Running on 0.0.0.0" in its startup log, not just 127.0.0.1. Both devices must be on the same WiFi.
-
-**PDF export fails**
-```bash
-pip install reportlab
-```
-
-
-## Default Credentials
-
-Username: `admin`
-Password: `Admin@1234` (or whatever you set during database setup)
-
-Change this before showing the system to anyone outside the team.
-
-
-## UN Sustainable Development Goals
-
-Eikon was built as a university project, but its impact maps directly onto five of the seventeen UN Sustainable Development Goals. This is not a stretch — the alignment is structural.
-
-**SDG 4 - Quality Education**
-
-This is the primary one. Every minute a teacher spends calling names is a minute not spent teaching. Eikon eliminates that entirely. More meaningfully, the data it produces enables early intervention. When a student's attendance drops below 75%, the system flags them automatically. A teacher who knows a student is disengaging in week three can act. One who only finds out at the end of semester cannot. Accurate, effortless attendance data is a prerequisite for responsive education.
-
-**SDG 9 - Industry, Innovation and Infrastructure**
-
-ArcFace, the model Eikon runs on, was a research paper in 2018. Eikon takes that research and turns it into something a school administrator can use without reading a single technical document. That gap between research and deployment is exactly what SDG 9 means by building innovation infrastructure. Eikon is also designed for low-resource environments — it runs on a laptop and a webcam, with no internet required and no per-user licensing cost.
-
-**SDG 10 - Reduced Inequalities**
-
-Manual attendance is inconsistent by nature. Some teachers mark strictly, others leniently, some forget entirely. Students who speak up get corrected. Students who do not, do not. Eikon treats every student identically. The same threshold, the same timestamp, the same proof. Institutional fairness should not depend on which teacher happens to be teaching that day.
-
-**SDG 16 - Peace, Justice and Strong Institutions**
-
-Every attendance record Eikon creates is timestamped, photographed, and stored with a confidence score. There is no ambiguity and no room for dispute. A student cannot claim they were marked absent unfairly. A teacher cannot accidentally mark the wrong name. The photo crop taken at the moment of recognition is forensic-grade proof. Transparent, auditable records are the foundation of trustworthy institutions.
-
-**SDG 17 - Partnerships for the Goals**
-
-Eikon's architecture is designed for adoption, not just deployment. The local network model means it works in areas with unreliable internet. The open API means other systems can integrate with it. The multi-interface design — kiosk, web, mobile — means institutions with different resources can all use it. A government school with one shared computer uses the kiosk. A university with a tablet per teacher uses the Flutter app. The system meets institutions where they are.
-
-
-
-*Eikon — Built as a Final Year Project. University of Central Punjab.*
+<p align="center">
+  <strong>Eikon</strong> · Your face is your ID<br>
+  <sub>Built by <a href="https://github.com/f0rtron">f0rtron</a></sub>
+</p>

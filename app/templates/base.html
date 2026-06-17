@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>{% block title %}Smart Attendance{% endblock %}</title>
+  <title>{% block title %}Eikon{% endblock %}</title>
+  <link rel="shortcut icon" href="{{ url_for('static', filename='img/logo_icon_sand.png') }}" type="image/png">
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -13,36 +15,40 @@
           colors: {
             cyprus: {
               DEFAULT: '#004643',
-              light:   '#006B66',
-              dark:    '#002E2C',
-              darker:  '#001A19',
+              50:  '#E6F2F1',
+              100: '#B3D9D7',
+              200: '#80C0BD',
+              300: '#4DA7A3',
+              400: '#1A8E89',
+              500: '#006B66',
+              600: '#004643',
+              700: '#003A38',
+              800: '#002E2C',
+              900: '#001A19',
+              950: '#000D0C',
             },
             sand: {
               DEFAULT: '#F0EDE5',
-              dark:    '#E8E4DB',
-              darker:  '#D4CFC6',
+              50:  '#FDFCFA',
+              100: '#F9F7F3',
+              200: '#F0EDE5',
+              300: '#E8E4DB',
+              400: '#D4CFC6',
+              500: '#B8B3AA',
+              600: '#9C978E',
+              700: '#807B72',
             },
           },
           fontFamily: {
-            sans: ['Inter', 'system-ui', 'sans-serif'],
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
           },
         }
       }
     }
   </script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;450;500;550;600;700;800&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
-  <style>
-    .sidebar-link {
-      display: flex; align-items: center; gap: 12px;
-      padding: 10px 16px; border-radius: 8px;
-      color: rgba(240,237,229,0.65);
-      transition: all 0.2s; text-decoration: none; font-size: 14px;
-    }
-    .sidebar-link:hover  { background: rgba(255,255,255,0.1); color: #F0EDE5; }
-    .sidebar-link.active { background: rgba(240,237,229,0.15); color: #F0EDE5; border-left: 3px solid #F0EDE5; padding-left: 13px; }
-  </style>
   <script>
     (function(){
       const t = localStorage.getItem('theme');
@@ -50,35 +56,60 @@
     })();
   </script>
 </head>
-<body class="bg-sand dark:bg-cyprus-darker min-h-screen transition-colors duration-200 font-sans">
+<body class="min-h-screen transition-colors duration-300 font-sans" style="background:var(--bg);color:var(--text-primary);">
 
 <div class="flex h-screen overflow-hidden">
 
-  <!-- ── Sidebar (Cyprus background) ────────────────────────────────────── -->
-  <aside class="w-64 flex flex-col flex-shrink-0" style="background-color:#004643;">
+  <!-- ── Mobile Header ─────────────────────────────────────────────────────── -->
+  <div class="mobile-header fixed top-0 left-0 right-0 z-40 px-4 py-3 flex items-center justify-between"
+       style="background:var(--cyprus);display:none;">
+    <button onclick="toggleMobileSidebar()" class="p-2 rounded-lg" style="color:#F0EDE5;">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+      </svg>
+    </button>
+    <div class="flex items-center gap-2">
+      <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:rgba(240,237,229,0.15);">
+        <svg class="w-4 h-4" style="color:#F0EDE5;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+        </svg>
+      </div>
+      <span class="font-semibold text-sm" style="color:#F0EDE5;">Eikon</span>
+    </div>
+    <button onclick="toggleDarkMode()" class="p-2 rounded-lg" style="color:rgba(240,237,229,0.7);">
+      <svg id="mobile-theme-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- ── Mobile Sidebar Overlay ────────────────────────────────────────────── -->
+  <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
+
+  <!-- ── Sidebar ───────────────────────────────────────────────────────────── -->
+  <aside id="main-sidebar" class="eikon-sidebar w-64 flex flex-col flex-shrink-0">
 
     <!-- Logo -->
-    <div class="px-6 py-5 border-b border-white/10">
+    <div class="px-5 py-5 border-b border-white/[0.08]">
       <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-             style="background:rgba(240,237,229,0.15);">
-          <svg class="w-5 h-5" style="color:#F0EDE5;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-          </svg>
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden"
+             style="background:rgba(240,237,229,0.06);border:1px solid rgba(240,237,229,0.1);">
+          <img src="{{ url_for('static', filename='img/logo_icon_sand.png') }}" class="w-full h-full object-contain p-0.5" alt="Eikon Logo">
         </div>
         <div>
-          <div class="font-semibold text-sm" style="color:#F0EDE5;">Smart Attendance</div>
-          <div class="text-xs" style="color:rgba(240,237,229,0.5);">Face Recognition</div>
+          <div class="font-bold text-[16px] tracking-tight leading-tight" style="color:#F0EDE5;">Eikon</div>
+          <div class="text-[10.5px] font-medium mt-0.5" style="color:rgba(240,237,229,0.45);">Your face is your ID</div>
         </div>
       </div>
     </div>
 
     <!-- Nav -->
-    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+    <nav class="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
       <a href="{{ url_for('dashboard.index') }}"
          class="sidebar-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
-        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
         </svg>
@@ -86,7 +117,7 @@
       </a>
       <a href="{{ url_for('attendance.index') }}"
          class="sidebar-link {% if 'attendance' in request.endpoint %}active{% endif %}">
-        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
         </svg>
@@ -94,7 +125,7 @@
       </a>
       <a href="{{ url_for('students.index') }}"
          class="sidebar-link {% if 'students' in request.endpoint %}active{% endif %}">
-        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
         </svg>
@@ -102,7 +133,7 @@
       </a>
       <a href="{{ url_for('reports.index') }}"
          class="sidebar-link {% if 'reports' in request.endpoint %}active{% endif %}">
-        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
         </svg>
@@ -111,13 +142,13 @@
     </nav>
 
     <!-- Bottom -->
-    <div class="px-3 py-4 space-y-2 border-t border-white/10">
-      <!-- Dark mode toggle -->
-      <button onclick="toggleDarkMode()"
-        class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm"
-        style="color:rgba(240,237,229,0.65);"
-        onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.color='#F0EDE5'"
-        onmouseout="this.style.background='';this.style.color='rgba(240,237,229,0.65)'">
+    <div class="px-3 py-3 space-y-2 border-t border-white/[0.06]">
+      <!-- Theme toggle -->
+      <button onclick="toggleDarkMode()" id="theme-toggle-btn"
+        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-[13px] font-medium"
+        style="color:rgba(240,237,229,0.55);"
+        onmouseover="this.style.background='rgba(255,255,255,0.06)';this.style.color='rgba(240,237,229,0.85)'"
+        onmouseout="this.style.background='';this.style.color='rgba(240,237,229,0.55)'">
         <svg id="dark-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
@@ -126,19 +157,20 @@
       </button>
 
       <!-- User -->
-      <div class="flex items-center gap-3 px-4 py-2 rounded-lg" style="background:rgba(255,255,255,0.08)">
-        <div class="w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm flex-shrink-0"
-             style="background:rgba(240,237,229,0.2);color:#F0EDE5;">
+      <div class="flex items-center gap-3 px-3 py-2.5 rounded-xl" style="background:rgba(240,237,229,0.06)">
+        <div class="w-8 h-8 rounded-full flex items-center justify-center font-semibold text-[12px] flex-shrink-0"
+             style="background:rgba(240,237,229,0.15);color:#F0EDE5;">
           {{ current_user.username[0].upper() }}
         </div>
         <div class="flex-1 min-w-0">
-          <div class="text-sm font-medium truncate" style="color:#F0EDE5;">{{ current_user.username }}</div>
-          <div class="text-xs capitalize" style="color:rgba(240,237,229,0.5);">{{ current_user.role }}</div>
+          <div class="text-[13px] font-medium truncate" style="color:#F0EDE5;">{{ current_user.username }}</div>
+          <div class="text-[11px] capitalize font-medium" style="color:rgba(240,237,229,0.35);">{{ current_user.role }}</div>
         </div>
         <a href="{{ url_for('auth.logout') }}" title="Logout"
-           style="color:rgba(240,237,229,0.5);"
-           onmouseover="this.style.color='#F0EDE5'"
-           onmouseout="this.style.color='rgba(240,237,229,0.5)'">
+           class="p-1.5 rounded-lg transition-all"
+           style="color:rgba(240,237,229,0.35);"
+           onmouseover="this.style.color='#F0EDE5';this.style.background='rgba(255,255,255,0.08)'"
+           onmouseout="this.style.color='rgba(240,237,229,0.35)';this.style.background=''">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
@@ -149,18 +181,15 @@
   </aside>
 
   <!-- ── Main content ──────────────────────────────────────────────────────── -->
-  <main class="flex-1 overflow-y-auto bg-sand dark:bg-cyprus-darker">
+  <main class="flex-1 overflow-y-auto pt-0 md:pt-0" style="background:var(--bg);">
+    <!-- Mobile top spacer -->
+    <div class="h-14 md:hidden"></div>
+
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         <div class="px-6 pt-4 space-y-2">
           {% for category, message in messages %}
-            <div class="px-4 py-3 rounded-lg text-sm font-medium
-              {% if category == 'success' %}bg-green-50 text-green-800 border border-green-200
-              {% elif category == 'danger' %}bg-red-50 text-red-800 border border-red-200
-              {% elif category == 'warning' %}bg-amber-50 text-amber-800 border border-amber-200
-              {% else %}bg-blue-50 text-blue-800 border border-blue-200{% endif %}">
-              {{ message }}
-            </div>
+            <div class="flash flash-{{ category }}">{{ message }}</div>
           {% endfor %}
         </div>
       {% endif %}
@@ -173,19 +202,29 @@
 function toggleDarkMode() {
   const html  = document.documentElement;
   const label = document.getElementById('dark-label');
+  const icon  = document.getElementById('dark-icon');
   if (html.classList.contains('dark')) {
     html.classList.remove('dark');
     localStorage.setItem('theme', 'light');
     label.textContent = 'Dark Mode';
+    icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>';
   } else {
     html.classList.add('dark');
     localStorage.setItem('theme', 'dark');
     label.textContent = 'Light Mode';
+    icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>';
   }
 }
+function toggleMobileSidebar() {
+  document.getElementById('main-sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('open');
+}
 document.addEventListener('DOMContentLoaded', () => {
-  if (document.documentElement.classList.contains('dark'))
+  const isDark = document.documentElement.classList.contains('dark');
+  if (isDark) {
     document.getElementById('dark-label').textContent = 'Light Mode';
+    document.getElementById('dark-icon').innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>';
+  }
 });
 </script>
 

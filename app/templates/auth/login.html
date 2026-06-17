@@ -3,52 +3,109 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Login — Smart Attendance</title>
+  <title>Login — Eikon</title>
+  <link rel="shortcut icon" href="{{ url_for('static', filename='img/logo_icon_sand.png') }}" type="image/png">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
           colors: {
-            cyprus: { DEFAULT: '#004643', light: '#006B66' },
-            sand:   { DEFAULT: '#F0EDE5', dark: '#E8E4DB' }
+            cyprus: { DEFAULT: '#004643', light: '#006B66', dark: '#002E2C' },
+            sand:   { DEFAULT: '#F0EDE5', dark: '#E8E4DB', darker: '#D4CFC6' }
           }
         }
       }
     }
   </script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-  <style>body { font-family: 'Inter', sans-serif; }</style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    @keyframes gradientDrift {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .animated-bg {
+      background: linear-gradient(135deg, #002E2C 0%, #004643 25%, #003A38 50%, #001A19 75%, #004643 100%);
+      background-size: 400% 400%;
+      animation: gradientDrift 15s ease infinite;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up { animation: fadeUp 0.6s ease forwards; }
+    .fade-up-delay { animation: fadeUp 0.6s ease 0.15s forwards; opacity: 0; }
+    .fade-up-delay-2 { animation: fadeUp 0.6s ease 0.3s forwards; opacity: 0; }
+    .glass-card {
+      background: rgba(240,237,229,0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+    .input-field {
+      transition: all 0.2s ease;
+      border: 1.5px solid #D4CFC6;
+    }
+    .input-field:focus {
+      border-color: #004643;
+      box-shadow: 0 0 0 3px rgba(0,70,67,0.1);
+      outline: none;
+    }
+    .sign-in-btn {
+      background: linear-gradient(135deg, #004643 0%, #006B66 100%);
+      transition: all 0.25s ease;
+    }
+    .sign-in-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 25px rgba(0,70,67,0.35);
+    }
+    .sign-in-btn:active { transform: scale(0.98); }
+    .floating-shapes {
+      position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+    }
+    .floating-shapes div {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.04;
+      background: #F0EDE5;
+    }
+  </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4"
-      style="background-color:#004643;background-image:radial-gradient(ellipse at 20% 50%, rgba(0,107,102,0.4) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(0,46,44,0.6) 0%, transparent 50%);">
+<body class="min-h-screen flex items-center justify-center p-4 animated-bg relative">
 
-  <div class="w-full max-w-md">
+  <!-- Floating ambient shapes -->
+  <div class="floating-shapes">
+    <div style="width:400px;height:400px;top:-10%;right:-5%;"></div>
+    <div style="width:300px;height:300px;bottom:-8%;left:-3%;"></div>
+    <div style="width:200px;height:200px;top:40%;left:15%;opacity:0.02;"></div>
+  </div>
+
+  <div class="w-full max-w-[420px] relative z-10">
 
     <!-- Logo -->
-    <div class="text-center mb-8">
-      <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 shadow-xl"
-           style="background:rgba(240,237,229,0.15);border:1px solid rgba(240,237,229,0.25);">
-        <svg class="w-8 h-8" style="color:#F0EDE5;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-        </svg>
+    <div class="text-center mb-8 fade-up flex flex-col items-center justify-center">
+      <div class="w-16 h-16 rounded-2xl mb-4 shadow-2xl overflow-hidden flex items-center justify-center p-1.5"
+           style="background:rgba(240,237,229,0.08);border:1px solid rgba(240,237,229,0.12);">
+        <img src="{{ url_for('static', filename='img/logo_icon_sand.png') }}" class="w-full h-full object-contain" alt="Eikon Logo">
       </div>
-      <h1 class="text-2xl font-bold" style="color:#F0EDE5;">Smart Attendance</h1>
-      <p class="text-sm mt-1" style="color:rgba(240,237,229,0.6);">Face Recognition System</p>
+      <h1 class="text-3xl font-bold tracking-tight" style="color:#F0EDE5;">Eikon</h1>
+      <p class="text-sm mt-1.5 font-medium" style="color:rgba(240,237,229,0.45);">
+        Your face is your ID. Walk in, you're marked.
+      </p>
     </div>
 
     <!-- Card -->
-    <div class="rounded-2xl p-8 shadow-2xl"
-         style="background:#F0EDE5;border:1px solid rgba(0,70,67,0.1);">
-      <h2 class="text-lg font-semibold mb-1" style="color:#004643;">Sign in to your account</h2>
-      <p class="text-sm mb-6" style="color:#888883;">Enter your credentials to continue</p>
+    <div class="glass-card rounded-2xl p-8 shadow-2xl fade-up-delay">
+      <h2 class="text-lg font-bold mb-1" style="color:#004643;">Welcome back</h2>
+      <p class="text-[13px] mb-6" style="color:#8A8A83;">Sign in to continue to your dashboard</p>
 
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
           {% for category, message in messages %}
-            <div class="mb-4 px-4 py-3 rounded-lg text-sm
+            <div class="mb-4 px-4 py-3 rounded-xl text-[13px] font-medium
               {% if category == 'danger' %}bg-red-50 text-red-700 border border-red-200
+              {% elif category == 'warning' %}bg-amber-50 text-amber-700 border border-amber-200
               {% else %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}">
               {{ message }}
             </div>
@@ -56,48 +113,95 @@
         {% endif %}
       {% endwith %}
 
-      <form method="POST" action="{{ url_for('auth.login') }}" class="space-y-4">
+      <form method="POST" action="{{ url_for('auth.login') }}" class="space-y-5">
 
         <div>
-          <label class="block text-sm font-medium mb-1.5" style="color:#004643;">Username</label>
+          <label class="block text-[13px] font-semibold mb-2" style="color:#004643;">Username</label>
           <input type="text" name="username" required autocomplete="username"
-            class="w-full px-4 py-3 rounded-xl text-sm border transition-all outline-none"
-            style="background:#FFFFFF;border-color:#D4CFC6;color:#1A1A1A;"
-            onfocus="this.style.borderColor='#004643';this.style.boxShadow='0 0 0 3px rgba(0,70,67,0.12)'"
-            onblur="this.style.borderColor='#D4CFC6';this.style.boxShadow='none'"
+            class="input-field w-full px-4 py-3 rounded-xl text-[13.5px]"
+            style="background:#FFFFFF;color:#1A1A1A;"
             placeholder="Enter your username"/>
         </div>
 
         <div>
-          <label class="block text-sm font-medium mb-1.5" style="color:#004643;">Password</label>
+          <label class="block text-[13px] font-semibold mb-2" style="color:#004643;">Password</label>
           <input type="password" name="password" required autocomplete="current-password"
-            class="w-full px-4 py-3 rounded-xl text-sm border transition-all outline-none"
-            style="background:#FFFFFF;border-color:#D4CFC6;color:#1A1A1A;"
-            onfocus="this.style.borderColor='#004643';this.style.boxShadow='0 0 0 3px rgba(0,70,67,0.12)'"
-            onblur="this.style.borderColor='#D4CFC6';this.style.boxShadow='none'"
+            class="input-field w-full px-4 py-3 rounded-xl text-[13.5px]"
+            style="background:#FFFFFF;color:#1A1A1A;"
             placeholder="Enter your password"/>
         </div>
 
         <div class="flex items-center gap-2">
           <input type="checkbox" name="remember" id="remember"
-            class="w-4 h-4 rounded accent-cyprus"/>
-          <label for="remember" class="text-sm" style="color:#555550;">Remember me</label>
+            class="w-4 h-4 rounded accent-[#004643]"/>
+          <label for="remember" class="text-[13px]" style="color:#4A4A45;">Remember me</label>
         </div>
 
-        <button type="submit"
-          class="w-full py-3 rounded-xl font-semibold text-sm transition-all mt-2"
-          style="background:#004643;color:#F0EDE5;"
-          onmouseover="this.style.background='#006B66'"
-          onmouseout="this.style.background='#004643'">
+        <button type="submit" class="sign-in-btn w-full py-3.5 rounded-xl font-semibold text-[14px] text-white mt-1">
           Sign In
         </button>
       </form>
 
-      <p class="text-center text-xs mt-5" style="color:#AAAAAA;">
-        Default credentials: admin / Admin@1234
+      <p class="text-center text-[11px] mt-6" style="color:#B8B3AA;">
+        Default: <span class="font-mono font-medium" style="color:#8A8A83;">admin</span> /
+        <span class="font-mono font-medium" style="color:#8A8A83;">Admin@1234</span>
       </p>
     </div>
 
+    <!-- Footer -->
+    <p class="text-center text-[11px] mt-6 fade-up-delay-2" style="color:rgba(240,237,229,0.25);">
+      Eikon Face Recognition Attendance System
+    </p>
+
   </div>
+
+  <!-- Demo Mode Button -->
+  <button onclick="launchDemo()" id="demoBtn"
+    class="fixed top-5 right-5 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl text-[12px] font-semibold
+           transition-all duration-300 hover:scale-105 active:scale-95"
+    style="background:rgba(240,237,229,0.1); border:1px solid rgba(240,237,229,0.15);
+           color:rgba(240,237,229,0.6); backdrop-filter:blur(10px);">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>
+    Demo Mode
+  </button>
+
+  <script>
+    async function launchDemo() {
+      const btn = document.getElementById('demoBtn');
+      btn.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4z"/>
+      </svg> Seeding data...`;
+      btn.disabled = true;
+
+      try {
+        // Seed demo data
+        const seedResp = await fetch('/api/demo/seed', { method: 'POST' });
+        const seedData = await seedResp.json();
+        if (!seedData.success) throw new Error(seedData.message);
+
+        // Auto-login as admin
+        const form = new FormData();
+        form.append('username', 'admin');
+        form.append('password', 'Admin@1234');
+        const loginResp = await fetch('{{ url_for("auth.login") }}', {
+          method: 'POST', body: form, redirect: 'follow'
+        });
+
+        window.location.href = '/dashboard';
+      } catch (e) {
+        btn.innerHTML = '❌ ' + e.message;
+        btn.style.color = '#FCA5A5';
+        setTimeout(() => {
+          btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Demo Mode`;
+          btn.style.color = 'rgba(240,237,229,0.6)';
+          btn.disabled = false;
+        }, 3000);
+      }
+    }
+  </script>
 </body>
 </html>

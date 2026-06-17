@@ -53,8 +53,10 @@ def get_engine():
             name       = MODEL_NAME,
             providers  = ["CPUExecutionProvider"],   # CPU only — works on Pi and laptop
         )
-        # det_size: detection resolution. 320x320 is faster on Pi, 640x640 more accurate on laptop
-        app.prepare(ctx_id=0, det_size=(640, 640))
+        # det_size: detection resolution. 320x320 is faster and perfectly fine for
+        # close-range attendance scanning. 640x640 only needed for detecting small
+        # faces across a large room. Lower = faster FPS.
+        app.prepare(ctx_id=0, det_size=(320, 320))
 
         _engine = app
         logger.info("InsightFace model loaded and ready.")

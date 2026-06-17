@@ -1,123 +1,165 @@
 {% extends "base.html" %}
-{% block title %}{{ student.name }} — Smart Attendance{% endblock %}
+{% block title %}{{ student.name }} — Eikon{% endblock %}
 
 {% block content %}
-<div class="p-6 space-y-6">
+<div class="p-6 lg:p-8 space-y-6">
 
   <!-- Header -->
   <div class="flex items-center gap-4">
-    <a href="{{ url_for('students.index') }}"
-       class="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
-      <svg class="w-5 h-5 text-slate-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <a href="{{ url_for('students.index') }}" class="btn btn-ghost !p-2">
+      <svg class="w-5 h-5" style="color:var(--text-muted);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
       </svg>
     </a>
     <div class="flex-1">
-      <div class="flex items-center gap-3">
-        <h1 class="text-2xl font-bold text-slate-800 dark:text-white">{{ student.name }}</h1>
-        {% if student.needs_reregistration %}
-          <span class="px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-semibold">
-            ⚠ Re-registration needed
-          </span>
-        {% endif %}
+      <div class="flex items-center gap-3 flex-wrap">
+        <div class="avatar avatar-lg" style="background:var(--color-primary-soft);color:var(--cyprus);">
+          {{ student.name[0].upper() }}
+        </div>
+        <div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <h1 class="page-title">{{ student.name }}</h1>
+            {% if student.needs_reregistration %}
+              <span class="badge badge-rereg">⚠ Re-registration needed</span>
+            {% endif %}
+          </div>
+          <p class="font-mono text-[13px]" style="color:var(--text-muted);">{{ student.reg_number }}</p>
+        </div>
       </div>
-      <p class="text-slate-500 text-sm mt-0.5 font-mono">{{ student.reg_number }}</p>
     </div>
   </div>
 
   <!-- Info cards -->
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-    <div class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
-      <div class="text-xs text-slate-500 mb-1">Sessions Attended</div>
-      <div class="text-2xl font-bold text-blue-600">{{ total_marked }}</div>
+    <div class="stat-card stat-total">
+      <div class="stat-label">Sessions Attended</div>
+      <div class="stat-value" style="color:var(--info);">{{ total_marked }}</div>
     </div>
-    <div class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
-      <div class="text-xs text-slate-500 mb-1">Present on Time</div>
-      <div class="text-2xl font-bold text-green-600">{{ present_cnt }}</div>
+    <div class="stat-card stat-present">
+      <div class="stat-label">Present on Time</div>
+      <div class="stat-value" style="color:var(--success);">{{ present_cnt }}</div>
     </div>
-    <div class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
-      <div class="text-xs text-slate-500 mb-1">Late Arrivals</div>
-      <div class="text-2xl font-bold text-amber-500">{{ late_cnt }}</div>
+    <div class="stat-card stat-late">
+      <div class="stat-label">Late Arrivals</div>
+      <div class="stat-value" style="color:var(--warning);">{{ late_cnt }}</div>
     </div>
-    <div class="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
-      <div class="text-xs text-slate-500 mb-1">Avg Confidence</div>
-      <div class="text-2xl font-bold {% if avg_conf >= rereg_threshold %}text-green-600{% else %}text-red-500{% endif %}">
+    <div class="stat-card stat-rate">
+      <div class="stat-label">Avg Confidence</div>
+      <div class="stat-value"
+           style="color:{% if avg_conf >= rereg_threshold %}var(--success){% else %}var(--danger){% endif %};">
         {{ avg_conf }}
       </div>
-      <div class="text-xs text-slate-400 mt-1">threshold: {{ rereg_threshold }}</div>
+      <div class="text-[11px] font-medium mt-1" style="color:var(--text-muted);">threshold: {{ rereg_threshold }}</div>
     </div>
   </div>
 
-  <!-- Confidence graph -->
-  <div class="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
-    <div class="flex items-center justify-between mb-4">
+  <!-- Attendance Heatmap -->
+  {% if heatmap_data %}
+  <div class="card p-5">
+    <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
       <div>
-        <h2 class="text-base font-semibold text-slate-800 dark:text-white">Recognition Confidence Over Time</h2>
-        <p class="text-xs text-slate-400 mt-0.5">
-          A declining trend means face re-registration is needed.
-          Threshold: {{ rereg_threshold }}
+        <h2 class="section-title">Attendance Heatmap</h2>
+        <p class="section-subtitle">{{ heatmap_semester_label }}</p>
+      </div>
+      <div class="heatmap-legend">
+        <span>Less</span>
+        <div class="heatmap-cell heatmap-level-0" style="width:12px;height:12px;cursor:default;"></div>
+        <div class="heatmap-cell heatmap-level-1" style="width:12px;height:12px;cursor:default;"></div>
+        <div class="heatmap-cell heatmap-level-2" style="width:12px;height:12px;cursor:default;"></div>
+        <div class="heatmap-cell heatmap-level-3" style="width:12px;height:12px;cursor:default;"></div>
+        <div class="heatmap-cell heatmap-level-4" style="width:12px;height:12px;cursor:default;"></div>
+        <span>More</span>
+      </div>
+    </div>
+
+    <!-- Week labels -->
+    <div class="overflow-x-auto pb-2">
+      <div style="display:flex;gap:3px;margin-left:36px;margin-bottom:4px;">
+        {% for wl in heatmap_week_labels %}
+        <div class="heatmap-label" style="width:14px;text-align:center;">{{ wl }}</div>
+        {% endfor %}
+      </div>
+      <div style="display:flex;gap:0;align-items:flex-start;">
+        <!-- Day labels -->
+        <div style="display:flex;flex-direction:column;gap:3px;margin-right:6px;padding-top:0;">
+          <div class="heatmap-label" style="height:14px;line-height:14px;">Mon</div>
+          <div class="heatmap-label" style="height:14px;line-height:14px;">Tue</div>
+          <div class="heatmap-label" style="height:14px;line-height:14px;">Wed</div>
+          <div class="heatmap-label" style="height:14px;line-height:14px;">Thu</div>
+          <div class="heatmap-label" style="height:14px;line-height:14px;">Fri</div>
+          <div class="heatmap-label" style="height:14px;line-height:14px;">Sat</div>
+        </div>
+        <!-- Grid -->
+        <div class="heatmap-grid">
+          {% for cell in heatmap_data %}
+          <div class="heatmap-cell heatmap-level-{{ cell.level }}" title="{{ cell.date }}: {{ cell.status }}">
+            <div class="heatmap-tooltip">{{ cell.date }} — {{ cell.status }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Confidence graph -->
+  <div class="card p-5">
+    <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+      <div>
+        <h2 class="section-title">Recognition Confidence Over Time</h2>
+        <p class="section-subtitle">
+          A declining trend means face re-registration is needed. Threshold: {{ rereg_threshold }}
         </p>
       </div>
       {% if student.needs_reregistration %}
-      <span class="px-3 py-1.5 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg text-xs font-medium">
-        ⚠ Confidence below threshold
-      </span>
+      <span class="badge badge-rereg">⚠ Confidence below threshold</span>
       {% endif %}
     </div>
     {% if conf_history %}
       <canvas id="confChart" height="100"></canvas>
     {% else %}
-      <div class="py-10 text-center text-slate-400 text-sm">
+      <div class="py-12 text-center text-[13px]" style="color:var(--text-muted);">
         No recognition data yet — run the recognition system first.
       </div>
     {% endif %}
   </div>
 
   <!-- Attendance history -->
-  <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
-    <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-700">
-      <h2 class="text-base font-semibold text-slate-800 dark:text-white">
-        Recent Attendance (last {{ records|length }} records)
-      </h2>
+  <div class="card overflow-hidden">
+    <div class="px-5 py-4" style="border-bottom:1px solid var(--border);">
+      <h2 class="section-title">Recent Attendance (last {{ records|length }} records)</h2>
     </div>
     {% if records %}
     <div class="overflow-x-auto">
-      <table class="w-full">
+      <table class="eikon-table">
         <thead>
-          <tr class="text-xs font-medium text-slate-500 bg-slate-50 dark:bg-slate-700">
-            <th class="px-5 py-3 text-left">Date</th>
-            <th class="px-5 py-3 text-left">Status</th>
-            <th class="px-5 py-3 text-left">Confidence</th>
-            <th class="px-5 py-3 text-left">Photo</th>
+          <tr>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Confidence</th>
+            <th>Photo</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+        <tbody>
           {% for r in records %}
-          <tr class="hover:bg-slate-50 dark:hover:bg-slate-700">
-            <td class="px-5 py-3 text-sm font-mono text-slate-600 dark:text-slate-300">{{ r.date }}</td>
-            <td class="px-5 py-3">
-              <span class="px-2 py-1 rounded-full text-xs font-medium
-                {% if r.status == 'present' %}bg-green-100 text-green-700
-                {% elif r.status == 'late' %}bg-amber-100 text-amber-700
-                {% else %}bg-blue-100 text-blue-700{% endif %}">
-                {{ r.status|capitalize }}
-              </span>
-            </td>
-            <td class="px-5 py-3">
-              <div class="flex items-center gap-2">
-                <div class="w-20 bg-slate-100 rounded-full h-1.5">
-                  <div class="h-1.5 rounded-full {% if r.confidence >= rereg_threshold %}bg-green-500{% else %}bg-red-400{% endif %}"
-                       style="width: {{ (r.confidence * 100)|int }}%"></div>
+          <tr>
+            <td class="font-mono">{{ r.date }}</td>
+            <td><span class="badge badge-{{ r.status }}">{{ r.status|capitalize }}</span></td>
+            <td>
+              <div class="conf-bar">
+                <div class="conf-track" style="width:80px;">
+                  <div class="conf-fill"
+                       style="width:{{ (r.confidence * 100)|int }}%;background:{% if r.confidence >= rereg_threshold %}var(--success){% else %}var(--danger){% endif %};"></div>
                 </div>
-                <span class="text-xs font-mono text-slate-500">{{ r.confidence }}</span>
+                <span class="conf-label">{{ r.confidence }}</span>
               </div>
             </td>
-            <td class="px-5 py-3">
+            <td>
               {% if r.photo_path %}
-                <img src="/{{ r.photo_path }}" class="w-8 h-8 rounded object-cover cursor-pointer"
+                <img src="/{{ r.photo_path }}" class="photo-thumb"
                      onclick="showPhoto('/{{ r.photo_path }}')" alt="photo"/>
               {% else %}
-                <span class="text-xs text-slate-400">—</span>
+                <span style="color:var(--text-muted);">—</span>
               {% endif %}
             </td>
           </tr>
@@ -126,16 +168,19 @@
       </table>
     </div>
     {% else %}
-      <div class="py-10 text-center text-slate-400 text-sm">No attendance records yet.</div>
+      <div class="py-12 text-center text-[13px]" style="color:var(--text-muted);">No attendance records yet.</div>
     {% endif %}
   </div>
 
 </div>
 
 <!-- Photo modal -->
-<div id="photoModal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center"
-     onclick="this.classList.add('hidden')">
-  <img id="photoModalImg" src="" class="max-w-xs rounded-xl" alt=""/>
+<div id="photoModal" class="hidden modal-backdrop" onclick="this.classList.add('hidden')">
+  <div class="modal-card" onclick="event.stopPropagation()">
+    <img id="photoModalImg" src="" class="w-full rounded-xl object-cover" alt=""/>
+    <button onclick="document.getElementById('photoModal').classList.add('hidden')"
+            class="btn btn-outline w-full mt-3 text-[13px]">Close</button>
+  </div>
 </div>
 {% endblock %}
 
@@ -150,6 +195,7 @@ function showPhoto(src) {
 const labels = {{ conf_history | map(attribute='date') | list | tojson }};
 const data   = {{ conf_history | map(attribute='confidence') | list | tojson }};
 const threshold = {{ rereg_threshold }};
+const isDark = document.documentElement.classList.contains('dark');
 
 const ctx = document.getElementById('confChart').getContext('2d');
 new Chart(ctx, {
@@ -160,18 +206,20 @@ new Chart(ctx, {
       {
         label: 'Confidence Score',
         data: data,
-        borderColor: '#2563EB',
-        backgroundColor: 'rgba(37,99,235,0.08)',
+        borderColor: isDark ? '#4DA7A3' : '#004643',
+        backgroundColor: isDark ? 'rgba(0,107,102,0.1)' : 'rgba(0,70,67,0.06)',
         borderWidth: 2,
         pointRadius: 4,
-        pointBackgroundColor: data.map(v => v >= threshold ? '#16A34A' : '#DC2626'),
+        pointBackgroundColor: data.map(v => v >= threshold
+          ? (isDark ? '#6EE7B7' : '#059669')
+          : (isDark ? '#FCA5A5' : '#DC2626')),
         tension: 0.3,
         fill: true,
       },
       {
         label: 'Re-registration Threshold',
         data: Array(labels.length).fill(threshold),
-        borderColor: '#F59E0B',
+        borderColor: isDark ? '#FCD34D' : '#F59E0B',
         borderWidth: 1.5,
         borderDash: [6, 3],
         pointRadius: 0,
@@ -182,20 +230,19 @@ new Chart(ctx, {
   options: {
     responsive: true,
     plugins: {
-      legend: { display: true, position: 'top' },
-      tooltip: {
-        callbacks: {
-          label: ctx => `Confidence: ${ctx.parsed.y.toFixed(3)}`
-        }
-      }
+      legend: {
+        display: true, position: 'top',
+        labels: { color: isDark ? '#6B8180' : '#94a3b8', font: { size: 11, family: 'Inter' } }
+      },
+      tooltip: { callbacks: { label: ctx => `Confidence: ${ctx.parsed.y.toFixed(3)}` } }
     },
     scales: {
       y: {
         min: 0, max: 1,
-        grid: { color: '#f1f5f9' },
-        ticks: { callback: v => v.toFixed(1) }
+        grid: { color: isDark ? 'rgba(37,69,67,0.4)' : '#f1f5f9' },
+        ticks: { callback: v => v.toFixed(1), color: isDark ? '#6B8180' : '#94a3b8', font: { size: 11 } }
       },
-      x: { grid: { display: false } }
+      x: { grid: { display: false }, ticks: { color: isDark ? '#6B8180' : '#94a3b8', font: { size: 11 } } }
     }
   }
 });

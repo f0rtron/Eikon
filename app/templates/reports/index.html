@@ -1,16 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Reports — Smart Attendance{% endblock %}
+{% block title %}Reports — Eikon{% endblock %}
 
 {% block content %}
-<div class="p-6 space-y-6">
+<div class="p-6 lg:p-8 space-y-6">
 
-  <div class="flex items-center justify-between">
+  <div class="flex items-center justify-between flex-wrap gap-4">
     <div>
-      <h1 class="text-2xl font-bold text-slate-800">Reports</h1>
-      <p class="text-slate-500 text-sm mt-0.5">Attendance summary across {{ total_days }} session(s)</p>
+      <h1 class="page-title">Reports</h1>
+      <p class="page-subtitle">Attendance summary across {{ total_days }} session(s)</p>
     </div>
-    <a href="{{ url_for('reports.export_csv') }}"
-       class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-500 transition-colors text-sm font-medium">
+    <a href="{{ url_for('reports.export_csv') }}" class="btn btn-success">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
           d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -20,48 +19,49 @@
   </div>
 
   <!-- Summary table -->
-  <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-    <div class="px-5 py-4 border-b border-slate-200">
-      <h2 class="text-sm font-semibold text-slate-800">Student Attendance Summary</h2>
+  <div class="card overflow-hidden">
+    <div class="px-5 py-4" style="border-bottom:1px solid var(--border);">
+      <h2 class="section-title">Student Attendance Summary</h2>
     </div>
     {% if summary %}
-    <table class="w-full">
+    <table class="eikon-table">
       <thead>
-        <tr class="text-xs font-medium text-slate-500 bg-slate-50">
-          <th class="px-5 py-3 text-left">Student</th>
-          <th class="px-5 py-3 text-left">Class</th>
-          <th class="px-5 py-3 text-left">Attended</th>
-          <th class="px-5 py-3 text-left">Total Sessions</th>
-          <th class="px-5 py-3 text-left">Percentage</th>
-          <th class="px-5 py-3 text-left">Status</th>
+        <tr>
+          <th>Student</th>
+          <th>Class</th>
+          <th>Attended</th>
+          <th>Total</th>
+          <th>Percentage</th>
+          <th>Status</th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-slate-100">
+      <tbody>
         {% for s in summary %}
-        <tr class="hover:bg-slate-50 {% if s.defaulter %}bg-red-50/30{% endif %}">
-          <td class="px-5 py-3">
-            <div class="text-sm font-medium text-slate-800">{{ s.name }}</div>
-            <div class="text-xs text-slate-400">{{ s.reg }}</div>
+        <tr {% if s.defaulter %}style="background:var(--danger-bg);"{% endif %}>
+          <td>
+            <div class="font-medium text-[13px]" style="color:var(--text-primary);">{{ s.name }}</div>
+            <div class="text-[11.5px] font-mono" style="color:var(--text-muted);">{{ s.reg }}</div>
           </td>
-          <td class="px-5 py-3 text-sm text-slate-600">{{ s.class_name }}</td>
-          <td class="px-5 py-3 text-sm font-semibold text-slate-700">{{ s.attended }}</td>
-          <td class="px-5 py-3 text-sm text-slate-600">{{ s.total }}</td>
-          <td class="px-5 py-3">
-            <div class="flex items-center gap-2">
-              <div class="w-20 bg-slate-100 rounded-full h-2">
-                <div class="h-2 rounded-full {% if s.pct >= 75 %}bg-green-500{% else %}bg-red-400{% endif %}"
-                     style="width: {{ s.pct }}%"></div>
+          <td>{{ s.class_name }}</td>
+          <td class="font-semibold" style="color:var(--text-primary);">{{ s.attended }}</td>
+          <td>{{ s.total }}</td>
+          <td>
+            <div class="flex items-center gap-3">
+              <div class="progress-track" style="width:80px;">
+                <div class="progress-fill {% if s.pct >= 75 %}fill-success{% else %}fill-danger{% endif %}"
+                     style="width:{{ s.pct }}%"></div>
               </div>
-              <span class="text-sm font-semibold {% if s.pct >= 75 %}text-green-600{% else %}text-red-500{% endif %}">
+              <span class="text-[13px] font-bold {% if s.pct >= 75 %}{% else %}{% endif %}"
+                    style="color:{% if s.pct >= 75 %}var(--success){% else %}var(--danger){% endif %};">
                 {{ s.pct }}%
               </span>
             </div>
           </td>
-          <td class="px-5 py-3">
+          <td>
             {% if s.defaulter %}
-              <span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">⚠ Defaulter</span>
+              <span class="badge badge-defaulter">⚠ Defaulter</span>
             {% else %}
-              <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">✓ Regular</span>
+              <span class="badge badge-regular">✓ Regular</span>
             {% endif %}
           </td>
         </tr>
@@ -69,7 +69,7 @@
       </tbody>
     </table>
     {% else %}
-    <div class="px-5 py-16 text-center text-slate-400 text-sm">
+    <div class="px-5 py-16 text-center text-[13px]" style="color:var(--text-muted);">
       No attendance data yet. Start the recognition system to begin.
     </div>
     {% endif %}

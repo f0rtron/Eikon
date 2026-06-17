@@ -1,5 +1,5 @@
 """
-app/routes/ai.py — Groq AI assistant for attendance queries
+app/routes/ai.py — Nixa AI assistant for Eikon attendance queries
 
 The AI receives live attendance data from MySQL as context,
 so it answers questions about actual records — not hallucinations.
@@ -97,7 +97,7 @@ def _build_context() -> str:
         ]
 
     context = f"""
-You are an AI assistant for a Smart Attendance System.
+You are Nixa, the AI assistant for Eikon — a face recognition attendance system.
 You have access to LIVE attendance data. Answer questions accurately using this data.
 
 === TODAY ({today.strftime('%A, %d %B %Y')}) ===
@@ -143,7 +143,7 @@ def chat_stream():
     Returns Server-Sent Events — text streams word by word like ChatGPT.
     """
     if not GROQ_API_KEY:
-        return jsonify({"error": "Groq API key not configured. Add GROQ_API_KEY to .env"}), 503
+        return jsonify({"error": "AI service not configured. Add GROQ_API_KEY to .env"}), 503
 
     data    = request.get_json(silent=True) or {}
     message = data.get("message", "").strip()
@@ -195,7 +195,7 @@ def chat_stream():
                     continue
 
         except requests.Timeout:
-            yield f"data: {json.dumps({'error': 'Groq API timeout'})}\n\n"
+            yield f"data: {json.dumps({'error': 'AI service timeout — please try again'})}\n\n"
         except Exception as e:
             logger.error(f"Groq stream error: {e}")
             yield f"data: {json.dumps({'error': str(e)})}\n\n"
@@ -214,11 +214,10 @@ def chat_stream():
 # ─── Flutter app — non-streaming JSON ─────────────────────────────────────────
 
 @ai_bp.route("/api/ai/chat", methods=["POST"])
-@login_required
 def flutter_chat():
     """Non-streaming endpoint for Flutter app."""
     if not GROQ_API_KEY:
-        return jsonify({"error": "Groq API key not configured"}), 503
+        return jsonify({"error": "AI service not configured"}), 503
 
     data    = request.get_json(silent=True) or {}
     message = data.get("message", "").strip()
@@ -254,7 +253,7 @@ def flutter_chat():
         return jsonify({"reply": reply})
 
     except requests.Timeout:
-        return jsonify({"error": "Groq API timeout — try again"}), 504
+        return jsonify({"error": "AI service timeout — try again"}), 504
     except Exception as e:
         logger.error(f"Groq error: {e}")
         return jsonify({"error": str(e)}), 500

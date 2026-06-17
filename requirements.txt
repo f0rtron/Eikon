@@ -23,6 +23,7 @@ Flask>=3.0.0
 Flask-Login>=0.6.3
 Flask-WTF>=1.2.0
 Werkzeug>=3.0.0
+Flask-SocketIO>=5.3.6
 
 # ─── Security ─────────────────────────────────────────────────────────────────
 bcrypt>=4.0.0

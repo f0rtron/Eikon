@@ -1,25 +1,19 @@
 """
-core/register.py — Student registration and face image capture
+core/register.py — Professional Guided Student Registration
 
-Captures IMAGES_PER_STUDENT face images for a new student,
-saves them to dataset/<reg_number>/, and creates the student
-record in MySQL.
-
-Usage (standalone):
-    python core/register.py
-
-Usage (from other code):
-    from core.register import register_student
-    register_student(reg_number="G1F22UBSCS173", name="Fahad Gujjar")
+Handles real-time guided face capture with:
+  - Quality checks (blur, brightness, centering)
+  - Pose guidance (Straight, Left, Right, Up, Down)
+  - Kiosk-ready state machine (RegistrationSession)
 """
 
 import cv2
 import logging
 import sys
 import time
+import numpy as np
 from pathlib import Path
 
-# ─── allow running as a standalone script from project root ───────────────────
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from config import DATASET_DIR, IMAGES_PER_STUDENT
@@ -29,206 +23,209 @@ from utils.camera import Camera
 
 logger = logging.getLogger(__name__)
 
-
-# ─── Face detector (fast Haar cascade — only needed during registration) ──────
+# Fast Haar cascade for registration
 _CASCADE_PATH = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
 _face_detector = cv2.CascadeClassifier(_CASCADE_PATH)
 
 
-def _detect_face(frame):
+class RegistrationQuality:
+    """Helper to check face frame quality."""
+    
+    @staticmethod
+    def check(frame, face_box):
+        x, y, w, h = face_box
+        fh, fw = frame.shape[:2]
+        
+        # 1. Centering
+        face_center_x, face_center_y = x + w/2, y + h/2
+        frame_center_x, frame_center_y = fw/2, fh/2
+        dist_x = abs(face_center_x - frame_center_x) / fw
+        dist_y = abs(face_center_y - frame_center_y) / fh
+        
+        if dist_x > 0.25 or dist_y > 0.25:
+            return 0.0, "Please center your face in the oval"
+            
+        # 2. Size
+        area_ratio = (w * h) / (fw * fh)
+        if area_ratio < 0.05:
+            return 0.0, "Move closer to the camera"
+        if area_ratio > 0.5:
+            return 0.0, "Move slightly back"
+            
+        # 3. Blur
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        face_crop = gray[y:y+h, x:x+w]
+        blur_score = cv2.Laplacian(face_crop, cv2.CV_64F).var()
+        if blur_score < 30:  # Relaxed from 80 for cheaper webcams
+            return 0.0, "Hold still (blurry)"
+            
+        # 4. Brightness
+        brightness = np.mean(face_crop)
+        if brightness < 40:
+            return 0.0, "Too dark — improve lighting"
+        if brightness > 240:
+            return 0.0, "Too bright — avoid harsh light"
+            
+        # Quality score based on blur and brightness (0-100)
+        score = min(100, (blur_score / 300) * 50 + (1 - abs(140 - brightness)/140) * 50)
+        return score, "Perfect"
+
+
+class RegistrationSession:
     """
-    Return the largest face bounding box (x, y, w, h) or None.
-    Uses Haar cascade — fast and good enough for controlled registration.
-    InsightFace is used for the actual recognition in recognize.py.
+    State machine for guided registration. Designed to be consumed frame-by-frame
+    by a GUI (like the Kiosk) or the CLI fallback.
     """
-    gray  = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    faces = _face_detector.detectMultiScale(
-        gray,
-        scaleFactor=1.1,
-        minNeighbors=5,
-        minSize=(80, 80),
-    )
-    if len(faces) == 0:
-        return None
-    # return the largest detected face
-    return max(faces, key=lambda f: f[2] * f[3])
-
-
-def _draw_overlay(frame, count: int, total: int, face_box=None, status: str = ""):
-    """
-    Draw progress overlay on the live camera feed during registration.
-    Green box = face detected, Red box = no face.
-    """
-    display = frame.copy()
-    h, w    = display.shape[:2]
-
-    # ── face bounding box ────────────────────────────────────────────────────
-    if face_box is not None:
-        x, y, fw, fh = face_box
-        color = (0, 200, 0)   # green — face detected
-        cv2.rectangle(display, (x, y), (x + fw, y + fh), color, 2)
-        label = f"Face detected — {count}/{total} captured"
-        cv2.putText(display, label, (x, y - 10),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
-    else:
-        msg = "No face detected — look at the camera"
-        cv2.putText(display, msg, (20, 50),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 220), 2)
-
-    # ── progress bar ─────────────────────────────────────────────────────────
-    bar_x, bar_y, bar_w, bar_h = 20, h - 40, w - 40, 18
-    cv2.rectangle(display, (bar_x, bar_y), (bar_x + bar_w, bar_y + bar_h), (60, 60, 60), -1)
-    filled = int(bar_w * count / total)
-    if filled > 0:
-        cv2.rectangle(display, (bar_x, bar_y), (bar_x + filled, bar_y + bar_h), (0, 200, 0), -1)
-    cv2.putText(display, f"{count}/{total}", (bar_x + bar_w + 8, bar_y + 14),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
-
-    # ── status text ──────────────────────────────────────────────────────────
-    if status:
-        cv2.putText(display, status, (20, h - 60),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 220, 220), 2)
-
-    # ── instructions ─────────────────────────────────────────────────────────
-    cv2.putText(display, "Press Q to cancel", (20, 25),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (180, 180, 180), 1)
-
-    return display
-
-
-def capture_faces(reg_number: str, name: str, target_count: int = None) -> int:
-    """
-    Open the camera, guide the user to look at different angles,
-    and save face images to dataset/<reg_number>/.
-
-    Args:
-        reg_number:   Student registration number (used as folder name).
-        name:         Student name (shown on screen).
-        target_count: Number of images to capture (default from config).
-
-    Returns:
-        Number of images actually saved (0 if cancelled or failed).
-    """
-    if target_count is None:
-        target_count = IMAGES_PER_STUDENT
-
-    # ── create student dataset folder ─────────────────────────────────────────
-    student_dir = DATASET_DIR / reg_number
-    student_dir.mkdir(parents=True, exist_ok=True)
-    logger.info(f"Saving face images to: {student_dir}")
-
-    saved      = 0
-    last_saved = 0.0          # timestamp of last save (enforce spacing)
-    MIN_INTERVAL = 0.2        # seconds between captures (avoid near-duplicates)
-
-    # Guidance messages shown in sequence to encourage varied angles
-    GUIDANCE = [
-        "Look straight at the camera",
-        "Tilt head slightly left",
-        "Tilt head slightly right",
-        "Look slightly up",
-        "Look slightly down",
-        "Neutral expression",
+    POSES = [
+        ("Look Straight", 10),
+        ("Turn slightly Left", 5),
+        ("Turn slightly Right", 5),
+        ("Look slightly Up", 5),
+        ("Look slightly Down", 5)
     ]
+    
+    def __init__(self, reg_number: str, name: str):
+        self.reg_number = reg_number
+        self.name = name
+        self.student_dir = DATASET_DIR / reg_number
+        self.student_dir.mkdir(parents=True, exist_ok=True)
+        
+        self.pose_idx = 0
+        self.frames_saved_current_pose = 0
+        self.total_saved = 0
+        self.target_total = sum(count for _, count in self.POSES)
+        
+        self.last_capture_time = 0.0
+        self.is_complete = False
+        
+    def get_current_instruction(self):
+        if self.is_complete:
+            return "Registration Complete"
+        pose_name, target = self.POSES[self.pose_idx]
+        return f"{pose_name} ({self.frames_saved_current_pose}/{target})"
 
-    with Camera() as cam:
-        logger.info("Camera opened for registration.")
-        window_name = f"Registration — {name} ({reg_number})"
-        cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
-        cv2.resizeWindow(window_name, 800, 600)
+    def process_frame(self, frame):
+        """
+        Processes a single frame.
+        Returns: (state_dict, modified_frame_for_display)
+        """
+        if self.is_complete:
+            return {"status": "complete", "progress": 1.0}, frame
 
-        while saved < target_count:
-            frame = cam.read()
-            if frame is None:
-                logger.warning("Empty frame — skipping.")
-                continue
+        display = frame.copy()
+        h, w = display.shape[:2]
+        
+        # Draw guidance oval
+        center_x, center_y = w // 2, h // 2
+        oval_w, oval_h = int(w * 0.25), int(h * 0.35)
+        
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        faces = _face_detector.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(80, 80))
+        
+        state = {
+            "status": "scanning",
+            "instruction": "Position face in the oval",
+            "quality": 0,
+            "progress": self.total_saved / self.target_total,
+            "pose": self.POSES[self.pose_idx][0]
+        }
+        
+        oval_color = (0, 0, 255) # Red by default
 
-            face_box = _detect_face(frame)
-            now      = time.time()
-            guidance = GUIDANCE[min(saved // (target_count // len(GUIDANCE)), len(GUIDANCE) - 1)]
+        if len(faces) > 0:
+            # Largest face
+            face_box = max(faces, key=lambda f: f[2] * f[3])
+            score, msg = RegistrationQuality.check(frame, face_box)
+            
+            if score > 0:
+                oval_color = (0, 255, 0) # Green = good
+                state["instruction"] = self.POSES[self.pose_idx][0]
+                state["quality"] = score
+                
+                # Auto-capture logic
+                now = time.time()
+                if now - self.last_capture_time > 0.3: # 300ms between captures
+                    self._save_frame(frame, face_box)
+                    self.last_capture_time = now
+                    oval_color = (255, 255, 0) # Cyan flash on capture
+            else:
+                oval_color = (0, 165, 255) # Orange = face found, poor quality
+                state["instruction"] = msg
+                
+            # Draw face box lightly
+            fx, fy, fw, fh = face_box
+            cv2.rectangle(display, (fx, fy), (fx+fw, fy+fh), oval_color, 1)
 
-            # ── auto-capture when face is detected at intervals ───────────────
-            if face_box is not None and (now - last_saved) >= MIN_INTERVAL:
-                x, y, fw, fh = face_box
-                # add 20% padding around the detected face
-                pad   = int(max(fw, fh) * 0.2)
-                x1    = max(0, x - pad)
-                y1    = max(0, y - pad)
-                x2    = min(frame.shape[1], x + fw + pad)
-                y2    = min(frame.shape[0], y + fh + pad)
-                face_crop = frame[y1:y2, x1:x2]
+        cv2.ellipse(display, (center_x, center_y), (oval_w, oval_h), 0, 0, 360, oval_color, 2)
+        
+        return state, display
 
-                img_path = student_dir / f"{saved + 1:03d}.jpg"
-                cv2.imwrite(str(img_path), face_crop)
-                saved     += 1
-                last_saved = now
-                logger.debug(f"Saved: {img_path}")
-
-            overlay = _draw_overlay(frame, saved, target_count, face_box, guidance)
-            cv2.imshow(window_name, overlay)
-
-            if cv2.waitKey(1) & 0xFF == ord("q"):
-                logger.info("Registration cancelled by user.")
-                break
-
-        cv2.destroyAllWindows()
-
-    logger.info(f"Registration complete — {saved}/{target_count} images saved for {reg_number}.")
-    return saved
+    def _save_frame(self, frame, face_box):
+        x, y, fw, fh = face_box
+        pad = int(max(fw, fh) * 0.2)
+        x1, y1 = max(0, x - pad), max(0, y - pad)
+        x2, y2 = min(frame.shape[1], x + fw + pad), min(frame.shape[0], y + fh + pad)
+        
+        img_path = self.student_dir / f"{self.total_saved + 1:03d}.jpg"
+        cv2.imwrite(str(img_path), frame[y1:y2, x1:x2])
+        
+        self.frames_saved_current_pose += 1
+        self.total_saved += 1
+        
+        pose_target = self.POSES[self.pose_idx][1]
+        if self.frames_saved_current_pose >= pose_target:
+            self.pose_idx += 1
+            self.frames_saved_current_pose = 0
+            if self.pose_idx >= len(self.POSES):
+                self.is_complete = True
 
 
 def register_student(
     reg_number: str,
     name: str,
-    email: str       = "",
-    class_name: str  = "",
-    capture: bool    = True,
+    email: str = "",
+    class_name: str = "",
+    capture: bool = True,
 ) -> Student | None:
-    """
-    Full registration flow:
-      1. Check if student already exists in DB.
-      2. Capture face images (if capture=True).
-      3. Save student record to MySQL.
-
-    Args:
-        reg_number: Unique registration / roll number.
-        name:       Full name.
-        email:      Optional email for absence alerts.
-        class_name: e.g. "BSCS-6A".
-        capture:    If False, skip camera capture (useful for testing).
-
-    Returns:
-        Student ORM object on success, None on failure.
-    """
+    
     logger.info(f"Starting registration: {reg_number} — {name}")
 
-    # ── check for duplicate ───────────────────────────────────────────────────
     with db_session() as session:
         existing = session.query(Student).filter_by(reg_number=reg_number).first()
         if existing:
-            logger.warning(f"Student {reg_number} already registered.")
             print(f"\n  Student {reg_number} already exists in the database.")
             return existing
 
-    # ── capture face images ───────────────────────────────────────────────────
     dataset_path = str(DATASET_DIR / reg_number)
-    saved_count  = 0
-
+    
     if capture:
-        print(f"\n  Starting face capture for {name}.")
-        print(f"  Please look at the camera. {IMAGES_PER_STUDENT} images will be captured.")
-        print(f"  Press Q to cancel.\n")
-        saved_count = capture_faces(reg_number, name)
-
-        if saved_count < 10:
-            logger.error(f"Only {saved_count} images captured — minimum 10 required.")
-            print(f"\n  Registration failed: only {saved_count} images captured.")
-            print("  Please try again in better lighting and keep your face visible.")
+        session_obj = RegistrationSession(reg_number, name)
+        with Camera() as cam:
+            cv2.namedWindow("Eikon Registration", cv2.WINDOW_NORMAL)
+            cv2.resizeWindow("Eikon Registration", 800, 600)
+            
+            while not session_obj.is_complete:
+                frame = cam.read()
+                if frame is None: continue
+                
+                state, display = session_obj.process_frame(frame)
+                
+                # CLI Overlay
+                h, w = display.shape[:2]
+                cv2.rectangle(display, (0, h-60), (w, h), (0,0,0), -1)
+                cv2.putText(display, f"Instruction: {state['instruction']}", (20, h-35), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,255,255), 1)
+                cv2.putText(display, f"Progress: {int(state['progress']*100)}%", (20, h-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,255,0), 1)
+                
+                cv2.imshow("Eikon Registration", display)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    print("\n  Registration cancelled by user.")
+                    break
+            
+            cv2.destroyAllWindows()
+            
+        if not session_obj.is_complete:
             return None
-    else:
-        logger.info("Skipping capture (capture=False).")
 
-    # ── save to database ──────────────────────────────────────────────────────
     with db_session() as session:
         student = Student(
             reg_number   = reg_number,
@@ -236,51 +233,27 @@ def register_student(
             email        = email or None,
             class_name   = class_name or None,
             dataset_path = dataset_path,
-            is_encoded   = False,     # set to True after train.py runs
+            is_encoded   = False,
         )
         session.add(student)
-        # flush to get the auto-generated id before commit
         session.flush()
         student_id = student.id
-        logger.info(f"Student saved to DB — id={student_id}, reg={reg_number}")
 
-    print(f"\n  Registration complete!")
-    print(f"  Name:         {name}")
-    print(f"  Reg number:   {reg_number}")
-    print(f"  Images saved: {saved_count}")
-    print(f"  Next step:    run  python core/train.py  to generate face encodings.\n")
-
-    # return a fresh session object
+    print(f"\n  Registration complete for {name}!")
+    
     with db_session() as session:
         return session.query(Student).get(student_id)
 
 
-# ─── CLI entry point ──────────────────────────────────────────────────────────
-
 def _cli():
-    print("\n=== Smart Attendance — Student Registration ===\n")
-    reg_number = input("  Registration number (e.g. G1F22UBSCS173): ").strip()
+    print("\n=== Eikon — Student Registration ===\n")
+    reg_number = input("  Registration number: ").strip()
     name       = input("  Full name: ").strip()
-    email      = input("  Email (optional, press Enter to skip): ").strip()
-    class_name = input("  Class (e.g. BSCS-6A, optional): ").strip()
-
+    
     if not reg_number or not name:
-        print("\n  Error: registration number and name are required.")
         sys.exit(1)
-
-    student = register_student(
-        reg_number = reg_number,
-        name       = name,
-        email      = email,
-        class_name = class_name,
-        capture    = True,
-    )
-
-    if student:
-        print("  Student registered successfully.")
-    else:
-        print("  Registration failed. Check logs/app.log for details.")
-        sys.exit(1)
+        
+    register_student(reg_number=reg_number, name=name)
 
 
 if __name__ == "__main__":

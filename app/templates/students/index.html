@@ -1,25 +1,23 @@
 {% extends "base.html" %}
-{% block title %}Students — Smart Attendance{% endblock %}
+{% block title %}Students — Eikon{% endblock %}
 
 {% block content %}
-<div class="p-6 space-y-6">
+<div class="p-6 lg:p-8 space-y-6">
 
-  <div class="flex items-center justify-between">
+  <div class="flex items-center justify-between flex-wrap gap-4">
     <div>
-      <h1 class="text-2xl font-bold text-slate-800 dark:text-white">Students</h1>
-      <p class="text-slate-500 dark:text-slate-400 text-sm mt-0.5">{{ students|length }} registered students</p>
+      <h1 class="page-title">Students</h1>
+      <p class="page-subtitle">{{ students|length }} registered students</p>
     </div>
     <div class="flex gap-2">
-      <a href="{{ url_for('students.bulk_import') }}"
-         class="flex items-center gap-2 px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-sm font-medium">
+      <a href="{{ url_for('students.bulk_import') }}" class="btn btn-outline">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
         </svg>
         Import CSV
       </a>
-      <a href="{{ url_for('students.add') }}"
-         class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors text-sm font-medium">
+      <a href="{{ url_for('students.add') }}" class="btn btn-primary">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
         </svg>
@@ -28,67 +26,65 @@
     </div>
   </div>
 
-  <!-- Re-registration alert -->
   {% if rereg_count > 0 %}
-  <div class="flex items-center gap-3 px-4 py-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
-    <svg class="w-5 h-5 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <div class="alert alert-warning">
+    <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
         d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
     </svg>
-    <span class="text-sm font-medium text-amber-700 dark:text-amber-400">
-      {{ rereg_count }} student(s) have declining recognition confidence — face re-registration recommended.
-    </span>
+    <span>{{ rereg_count }} student(s) have declining recognition confidence — face re-registration recommended.</span>
   </div>
   {% endif %}
 
-  <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+  <div class="card overflow-hidden">
     <div class="overflow-x-auto">
       {% if students %}
-      <table class="w-full">
+      <table class="eikon-table">
         <thead>
-          <tr class="text-xs font-medium text-slate-500 bg-slate-50 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-600">
-            <th class="px-5 py-3 text-left">Student</th>
-            <th class="px-5 py-3 text-left">Class</th>
-            <th class="px-5 py-3 text-left">Face Status</th>
-            <th class="px-5 py-3 text-left">Attendance</th>
-            <th class="px-5 py-3 text-left">Registered</th>
-            <th class="px-5 py-3 text-left">Action</th>
+          <tr>
+            <th>Student</th>
+            <th>Class</th>
+            <th>Face Status</th>
+            <th>Attendance</th>
+            <th>Registered</th>
+            <th>Action</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+        <tbody>
           {% for s in students %}
-          <tr class="hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
-            <td class="px-5 py-3">
-              <a href="{{ url_for('students.detail', student_id=s.id) }}"
-                 class="flex items-center gap-2 group">
-                <div class="font-medium text-slate-800 dark:text-white text-sm group-hover:text-blue-600 transition-colors">
+          <tr>
+            <td>
+              <a href="{{ url_for('students.detail', student_id=s.id) }}" class="group">
+                <div class="font-medium text-[13px] group-hover:underline" style="color:var(--text-primary);">
                   {{ s.name }}
                   {% if s.needs_reregistration %}
-                    <span class="ml-1 text-amber-500" title="Face re-registration needed">⚠</span>
+                    <span class="ml-1" style="color:var(--warning);" title="Re-registration needed">⚠</span>
                   {% endif %}
                 </div>
               </a>
-              <div class="text-xs text-slate-400 font-mono">{{ s.reg_number }}</div>
+              <div class="text-[11.5px] font-mono" style="color:var(--text-muted);">{{ s.reg_number }}</div>
             </td>
-            <td class="px-5 py-3 text-sm text-slate-600 dark:text-slate-300">{{ s.class_name }}</td>
-            <td class="px-5 py-3">
+            <td>{{ s.class_name }}</td>
+            <td>
               {% if s.needs_reregistration %}
-                <span class="px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">⚠ Re-register</span>
+                <span class="badge badge-rereg">⚠ Re-register</span>
               {% elif s.is_encoded %}
-                <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">✓ Ready</span>
+                <span class="badge badge-ready">✓ Ready</span>
               {% else %}
-                <span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">Pending</span>
+                <span class="badge badge-pending">Pending</span>
               {% endif %}
             </td>
-            <td class="px-5 py-3 text-sm font-semibold text-slate-700 dark:text-slate-200">{{ s.attendance }}</td>
-            <td class="px-5 py-3 text-sm text-slate-500">{{ s.created_at }}</td>
-            <td class="px-5 py-3 flex items-center gap-3">
-              <a href="{{ url_for('students.detail', student_id=s.id) }}"
-                 class="text-xs text-blue-600 hover:text-blue-500 font-medium">View</a>
-              <form method="POST" action="{{ url_for('students.deactivate', student_id=s.id) }}"
-                    onsubmit="return confirm('Deactivate {{ s.name }}?')">
-                <button type="submit" class="text-xs text-red-500 hover:text-red-700 font-medium">Remove</button>
-              </form>
+            <td class="font-semibold" style="color:var(--text-primary);">{{ s.attendance }}</td>
+            <td style="color:var(--text-muted);">{{ s.created_at }}</td>
+            <td>
+              <div class="flex items-center gap-3">
+                <a href="{{ url_for('students.detail', student_id=s.id) }}"
+                   class="text-[12px] font-semibold" style="color:var(--cyprus);">View</a>
+                <form method="POST" action="{{ url_for('students.deactivate', student_id=s.id) }}"
+                      onsubmit="return confirm('Deactivate {{ s.name }}?')">
+                  <button type="submit" class="text-[12px] font-semibold" style="color:var(--danger);">Remove</button>
+                </form>
+              </div>
             </td>
           </tr>
           {% endfor %}
@@ -96,11 +92,8 @@
       </table>
       {% else %}
       <div class="px-5 py-16 text-center">
-        <div class="text-slate-400 text-sm mb-3">No students registered yet.</div>
-        <a href="{{ url_for('students.add') }}"
-           class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-500 transition-colors">
-          Add First Student
-        </a>
+        <div class="text-[13px] mb-4" style="color:var(--text-muted);">No students registered yet.</div>
+        <a href="{{ url_for('students.add') }}" class="btn btn-primary">Add First Student</a>
       </div>
       {% endif %}
     </div>

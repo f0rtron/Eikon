@@ -1,30 +1,41 @@
-<!-- AI Chat Widget -->
+<!-- Nixa AI Chat Widget -->
 
 <style>
   #ai-panel {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    transform: translateY(20px);
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateY(20px) scale(0.96);
     opacity: 0;
     pointer-events: none;
   }
   #ai-panel.open {
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
     opacity: 1;
     pointer-events: all;
   }
-  .ai-msg { animation: fadeIn 0.2s ease; }
-  @keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; } }
+  .ai-msg { animation: msgIn 0.25s ease; }
+  @keyframes msgIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; } }
   #ai-messages::-webkit-scrollbar { width: 4px; }
-  #ai-messages::-webkit-scrollbar-thumb { background: #D4CFC6; border-radius: 2px; }
+  #ai-messages::-webkit-scrollbar-thumb { background: var(--sand-400); border-radius: 100px; }
+  html.dark #ai-messages::-webkit-scrollbar-thumb { background: var(--border); }
+  @keyframes bounce {
+    0%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-6px); }
+  }
+  .nixa-suggestion {
+    transition: all 0.15s ease;
+  }
+  .nixa-suggestion:hover {
+    background: var(--cyprus) !important;
+    color: var(--sand) !important;
+  }
 </style>
 
 <!-- Floating button -->
 <button id="ai-toggle" onclick="toggleAI()"
-  class="fixed bottom-6 right-6 w-14 h-14 text-white rounded-full shadow-xl flex items-center justify-center transition-all z-40"
-  style="background:#004643;">
+  class="ai-fab fixed bottom-6 right-6 w-14 h-14 rounded-full flex items-center justify-center z-40">
   <svg id="ai-icon-open" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+      d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
   </svg>
   <svg id="ai-icon-close" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -33,66 +44,64 @@
 
 <!-- Chat panel -->
 <div id="ai-panel"
-  class="fixed bottom-24 right-6 w-96 rounded-2xl shadow-2xl border border-gray-200 flex flex-col z-40 overflow-hidden"
-  style="height:500px;background:#FDFCF9;">
+  class="fixed bottom-24 right-6 w-96 rounded-2xl shadow-2xl flex flex-col z-40 overflow-hidden"
+  style="height:520px;background:var(--card);border:1px solid var(--border);">
 
   <!-- Header -->
-  <div class="px-4 py-3 flex items-center gap-3 flex-shrink-0" style="background:#004643;">
-    <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-         style="background:rgba(240,237,229,0.2);">
+  <div class="ai-panel-header px-4 py-3.5 flex items-center gap-3 flex-shrink-0">
+    <div class="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+         style="background:rgba(240,237,229,0.15);">
       <svg class="w-4 h-4" style="color:#F0EDE5;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
           d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
       </svg>
     </div>
     <div class="flex-1">
-      <div class="font-semibold text-sm" style="color:#F0EDE5;">Attendance AI</div>
-      <div class="text-xs" style="color:rgba(240,237,229,0.6);">Powered by Groq LLaMA 3</div>
+      <div class="font-semibold text-[13.5px]" style="color:#F0EDE5;">Nixa</div>
+      <div class="text-[11px] font-medium" style="color:rgba(240,237,229,0.45);">Eikon AI Assistant</div>
     </div>
-    <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+    <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
   </div>
 
   <!-- Messages -->
-  <div id="ai-messages" class="flex-1 overflow-y-auto p-4 space-y-3">
-    <div class="ai-msg flex gap-2">
-      <div class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold"
-           style="background:#E8E4DB;color:#004643;">AI</div>
-      <div class="rounded-2xl rounded-tl-sm px-3 py-2 text-sm max-w-xs"
-           style="background:#F0EDE5;color:#1A1A1A;">
-        Hello! I have access to your live attendance data. Ask me anything —
-        who's absent today, defaulters, attendance trends, or anything else.
+  <div id="ai-messages" class="flex-1 overflow-y-auto p-4 space-y-3" style="background:var(--surface-alt);">
+    <div class="ai-msg flex gap-2.5">
+      <div class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 text-[10px] font-bold"
+           style="background:var(--cyprus);color:var(--sand);">N</div>
+      <div class="rounded-2xl rounded-tl-sm px-3.5 py-2.5 text-[13px] max-w-[280px] leading-relaxed"
+           style="background:var(--card);color:var(--text-primary);border:1px solid var(--border-light);">
+        Hi! I'm <strong>Nixa</strong>, your attendance assistant. I have access to your live data — ask me about absences, defaulters, trends, or anything else.
       </div>
     </div>
   </div>
 
   <!-- Suggestions -->
-  <div id="ai-suggestions" class="px-4 pb-2 flex gap-2 overflow-x-auto flex-shrink-0">
+  <div id="ai-suggestions" class="px-4 pb-2 pt-1 flex gap-2 overflow-x-auto flex-shrink-0" style="background:var(--surface-alt);">
     <button onclick="sendSuggestion('Who is absent today?')"
-      class="flex-shrink-0 px-3 py-1 rounded-full text-xs transition-colors"
-      style="background:#E8E4DB;color:#004643;">Who's absent today?</button>
+      class="nixa-suggestion flex-shrink-0 px-3 py-1.5 rounded-full text-[11.5px] font-medium"
+      style="background:var(--color-primary-soft);color:var(--cyprus);">Who's absent?</button>
     <button onclick="sendSuggestion('List all defaulters')"
-      class="flex-shrink-0 px-3 py-1 rounded-full text-xs transition-colors"
-      style="background:#E8E4DB;color:#004643;">List defaulters</button>
+      class="nixa-suggestion flex-shrink-0 px-3 py-1.5 rounded-full text-[11.5px] font-medium"
+      style="background:var(--color-primary-soft);color:var(--cyprus);">Defaulters</button>
     <button onclick="sendSuggestion('How was attendance this week?')"
-      class="flex-shrink-0 px-3 py-1 rounded-full text-xs transition-colors"
-      style="background:#E8E4DB;color:#004643;">This week</button>
+      class="nixa-suggestion flex-shrink-0 px-3 py-1.5 rounded-full text-[11.5px] font-medium"
+      style="background:var(--color-primary-soft);color:var(--cyprus);">This week</button>
   </div>
 
   <!-- Input -->
-  <div class="px-4 pb-4 pt-2 flex-shrink-0" style="border-top:1px solid #E8E4DB;">
+  <div class="px-4 pb-4 pt-2 flex-shrink-0" style="border-top:1px solid var(--border-light);background:var(--card);">
     <div class="flex gap-2 items-end">
       <textarea id="ai-input"
-        placeholder="Ask about attendance..."
+        placeholder="Ask Nixa about attendance..."
         rows="1"
         onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}"
         oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,80)+'px'"
-        class="flex-1 resize-none px-3 py-2.5 text-sm rounded-xl border outline-none transition-all"
-        style="background:#F0EDE5;border-color:#D4CFC6;color:#1A1A1A;"
-        onfocus="this.style.borderColor='#004643'"
-        onblur="this.style.borderColor='#D4CFC6'"></textarea>
+        class="eikon-input flex-1 resize-none !py-2.5 !text-[13px] !rounded-xl"></textarea>
       <button onclick="sendMessage()"
-        class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors"
-        style="background:#004643;">
+        class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all"
+        style="background:var(--cyprus);"
+        onmouseover="this.style.background='var(--cyprus-500)'"
+        onmouseout="this.style.background='var(--cyprus)'">
         <svg class="w-4 h-4" style="color:#F0EDE5;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
@@ -112,7 +121,7 @@ function toggleAI() {
   document.getElementById('ai-panel').classList.toggle('open', aiOpen);
   document.getElementById('ai-icon-open').classList.toggle('hidden', aiOpen);
   document.getElementById('ai-icon-close').classList.toggle('hidden', !aiOpen);
-  if (aiOpen) setTimeout(() => document.getElementById('ai-input').focus(), 300);
+  if (aiOpen) setTimeout(() => document.getElementById('ai-input').focus(), 350);
 }
 
 function sendSuggestion(text) {
@@ -140,14 +149,12 @@ function sendMessage() {
     body:    JSON.stringify({ message: msg, history: aiHistory.slice(-6) }),
   })
   .then(resp => {
-    if (!resp.ok) {
-      throw new Error(`Server returned ${resp.status}`);
-    }
+    if (!resp.ok) throw new Error(`Server returned ${resp.status}`);
     const reader  = resp.body.getReader();
     const decoder = new TextDecoder();
     let fullReply = '';
     removeElement(thinkingId);
-    const replyId = appendMessage('ai', '▍');   // cursor
+    const replyId = appendMessage('ai', '▍');
 
     function read() {
       reader.read().then(({ done, value }) => {
@@ -181,9 +188,9 @@ function sendMessage() {
   })
   .catch(err => {
     removeElement(thinkingId);
-    appendMessage('ai', '⚠ ' + err.message + '. Check that GROQ_API_KEY is set in .env');
+    appendMessage('ai', '⚠ Connection error. Please check your configuration.');
     aiTyping = false;
-    console.error('AI chat error:', err);
+    console.error('Nixa chat error:', err);
   });
 }
 
@@ -193,16 +200,16 @@ function appendMessage(role, text) {
   const isAI = role === 'ai';
   const div  = document.createElement('div');
   div.id        = id;
-  div.className = 'ai-msg flex gap-2' + (isAI ? '' : ' flex-row-reverse');
+  div.className = 'ai-msg flex gap-2.5' + (isAI ? '' : ' flex-row-reverse');
   div.innerHTML = `
-    <div class="w-7 h-7 rounded-full flex-shrink-0 mt-0.5 flex items-center justify-center text-xs font-bold"
-         style="${isAI ? 'background:#E8E4DB;color:#004643;' : 'background:#004643;color:#F0EDE5;'}">
-      ${isAI ? 'AI' : 'You'}
+    <div class="w-7 h-7 rounded-lg flex-shrink-0 mt-0.5 flex items-center justify-center text-[10px] font-bold"
+         style="${isAI ? 'background:var(--cyprus);color:var(--sand);' : 'background:var(--sand-400);color:var(--cyprus);'}">
+      ${isAI ? 'N' : 'You'}
     </div>
-    <div class="rounded-2xl px-3 py-2 text-sm max-w-xs"
+    <div class="rounded-2xl px-3.5 py-2.5 text-[13px] max-w-[280px] leading-relaxed"
          style="${isAI
-           ? 'background:#F0EDE5;color:#1A1A1A;border-radius:16px 16px 16px 4px;'
-           : 'background:#004643;color:#F0EDE5;border-radius:16px 16px 4px 16px;'}">
+           ? 'background:var(--card);color:var(--text-primary);border:1px solid var(--border-light);border-radius:16px 16px 16px 4px;'
+           : 'background:var(--cyprus);color:var(--sand);border-radius:16px 16px 4px 16px;'}">
       ${text.replace(/\n/g, '<br>')}
     </div>`;
   msgs.appendChild(div);
@@ -219,9 +226,9 @@ function updateMessage(id, text) {
 function appendThinking() {
   return appendMessage('ai',
     '<span style="display:flex;gap:4px;align-items:center;">' +
-    '<span style="width:7px;height:7px;background:#004643;border-radius:50%;animation:bounce 1s infinite 0ms;display:inline-block;"></span>' +
-    '<span style="width:7px;height:7px;background:#004643;border-radius:50%;animation:bounce 1s infinite 200ms;display:inline-block;"></span>' +
-    '<span style="width:7px;height:7px;background:#004643;border-radius:50%;animation:bounce 1s infinite 400ms;display:inline-block;"></span>' +
+    '<span style="width:6px;height:6px;background:var(--cyprus-300);border-radius:50%;animation:bounce 1s infinite 0ms;display:inline-block;"></span>' +
+    '<span style="width:6px;height:6px;background:var(--cyprus-300);border-radius:50%;animation:bounce 1s infinite 200ms;display:inline-block;"></span>' +
+    '<span style="width:6px;height:6px;background:var(--cyprus-300);border-radius:50%;animation:bounce 1s infinite 400ms;display:inline-block;"></span>' +
     '</span>');
 }
 
@@ -230,10 +237,3 @@ function removeElement(id) {
   if (el) el.remove();
 }
 </script>
-
-<style>
-@keyframes bounce {
-  0%, 80%, 100% { transform: translateY(0); }
-  40% { transform: translateY(-6px); }
-}
-</style>

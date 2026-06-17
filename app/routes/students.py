@@ -1,8 +1,9 @@
 """
-app/routes/students.py v2 — Student management + detail + bulk import
+app/routes/students.py v3 — Student management + detail + heatmap + bulk import
 """
 
 import logging, csv, io
+from datetime import date, timedelta, datetime
 from flask import (Blueprint, render_template, redirect, url_for,
                    flash, request, Response)
 from flask_login import login_required
@@ -10,10 +11,123 @@ from sqlalchemy import func
 
 from db.connection import db_session
 from db.models import Student, Attendance
-from config import REREG_CONFIDENCE_THRESHOLD
+from config import REREG_CONFIDENCE_THRESHOLD, SEMESTER_START, SEMESTER_END
 
 logger      = logging.getLogger(__name__)
 students_bp = Blueprint("students", __name__)
+
+
+def _get_semester_range():
+    """
+    Return (start_date, end_date) for the current semester.
+    Uses SEMESTER_START / SEMESTER_END from .env if set,
+    otherwise defaults to a 16-week window ending today.
+    """
+    today = date.today()
+    start = None
+    end   = None
+
+    if SEMESTER_START:
+        try:
+            start = datetime.strptime(SEMESTER_START, "%Y-%m-%d").date()
+        except ValueError:
+            pass
+    if SEMESTER_END:
+        try:
+            end = datetime.strptime(SEMESTER_END, "%Y-%m-%d").date()
+        except ValueError:
+            pass
+
+    if not start or not end:
+        # Default: 16 weeks ending today
+        end   = today
+        start = today - timedelta(weeks=16)
+
+    return start, end
+
+
+def _build_heatmap(student_id, start_date, end_date):
+    """
+    Build a GitHub-style heatmap data list for a student.
+    Returns a list of {date, status, level} dicts for each day
+    from start_date to end_date (Mon-Sat only, skipping Sundays).
+    """
+    # Query all attendance for this student in the range
+    with db_session() as session:
+        records = (
+            session.query(Attendance.marked_date, Attendance.status)
+            .filter(
+                Attendance.student_id == student_id,
+                Attendance.marked_date >= start_date,
+                Attendance.marked_date <= end_date,
+            )
+            .all()
+        )
+
+    # Build lookup: date -> status
+    date_status = {}
+    for r in records:
+        # If multiple records on same day, prefer 'present' over 'late'
+        existing = date_status.get(r.marked_date)
+        if existing != "present":
+            date_status[r.marked_date] = r.status
+
+    # Generate grid: align to Monday start
+    # Find the Monday on or before start_date
+    days_since_monday = start_date.weekday()  # 0=Mon
+    grid_start = start_date - timedelta(days=days_since_monday)
+
+    heatmap = []
+    current = grid_start
+    while current <= end_date:
+        dow = current.weekday()
+        if dow < 6:  # Mon-Sat only (skip Sunday)
+            if current < start_date or current > end_date:
+                status = "empty"
+                level = 0
+            elif current in date_status:
+                s = date_status[current]
+                if s == "present":
+                    level = 4
+                    status = "Present"
+                elif s == "late":
+                    level = 2
+                    status = "Late"
+                else:
+                    level = 1
+                    status = s.capitalize()
+            elif current <= date.today():
+                status = "Absent"
+                level = 0
+            else:
+                status = "Upcoming"
+                level = 0
+
+            heatmap.append({
+                "date": current.strftime("%d %b %Y"),
+                "status": status,
+                "level": level,
+            })
+        current += timedelta(days=1)
+
+    return heatmap
+
+
+def _heatmap_week_labels(start_date, end_date):
+    """Generate week number labels for the heatmap columns."""
+    days_since_monday = start_date.weekday()
+    grid_start = start_date - timedelta(days=days_since_monday)
+    labels = []
+    current = grid_start
+    week = 1
+    while current <= end_date:
+        if week % 2 == 1:
+            labels.append(f"W{week}")
+        else:
+            labels.append("")
+        current += timedelta(weeks=1)
+        week += 1
+    return labels
 
 
 @students_bp.route("/students")
@@ -71,10 +185,19 @@ def detail(student_id):
             "confidence": round(r.confidence, 3), "photo_path": r.photo_path or "",
         } for r in records]
 
+    # Build heatmap data
+    sem_start, sem_end = _get_semester_range()
+    heatmap_data = _build_heatmap(student_id, sem_start, sem_end)
+    heatmap_week_labels = _heatmap_week_labels(sem_start, sem_end)
+    heatmap_semester_label = f"{sem_start.strftime('%d %b %Y')} — {sem_end.strftime('%d %b %Y')}"
+
     return render_template("students/detail.html",
         student=student_data, conf_history=conf_history, records=records_list,
         total_marked=len(records), present_cnt=present_cnt, late_cnt=late_cnt,
-        avg_conf=avg_conf, rereg_threshold=REREG_CONFIDENCE_THRESHOLD)
+        avg_conf=avg_conf, rereg_threshold=REREG_CONFIDENCE_THRESHOLD,
+        heatmap_data=heatmap_data,
+        heatmap_week_labels=heatmap_week_labels,
+        heatmap_semester_label=heatmap_semester_label)
 
 
 @students_bp.route("/students/add", methods=["GET", "POST"])
